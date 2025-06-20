@@ -10,6 +10,8 @@ button,
 tr,
 span,
 thead,
+td,
+i,
 table {
   font-family: "Alata", sans-serif !important;
   font-weight: 400;
@@ -19,6 +21,8 @@ table {
 code,
 pre,
 kbd,
+option,
+select,
 samp {
   font-family: "JetBrains Mono", monospace !important;
   font-optical-sizing: auto;
@@ -45,5 +49,34 @@ samp {
 }
 
 .version-stamp {
-  background: rgb(139, 92, 246) !important;
+  background: rgb(255, 99, 72) !important;
+}
+
+.swagger-ui .opblock.opblock-get .opblock-summary {
+  border-color: rgb(255, 99, 72) !important;
+}
+
+.swagger-ui .opblock.opblock-get {
+  background-color: rgba(255, 99, 72, 0.02) !important;
+  border-color: rgb(255, 99, 72) !important;
+}
+
+.swagger-ui .opblock.opblock-get .tab-header .tab-item.active h4 span:after {
+    background-color: rgb(255, 99, 72) !important;
+}
+
+.opblock-summary-method {
+    background: rgb(255, 99, 72) !important;
+}
+
+.swagger-ui .response-control-media-type--accept-controller select {
+  border-color: rgb(139, 92, 246);
+}
+.swagger-ui .response-control-media-type__accept-message {
+  color: rgb(139, 92, 246);
+}
+
+.swagger-ui .btn.execute {
+  background: rgb(255, 99, 72) !important;
+  border-color: rgb(255, 99, 72) !important;
 }
