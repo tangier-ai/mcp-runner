@@ -1,0 +1,49 @@
+@import url("https://fonts.googleapis.com/css2?family=Alata&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap");
+
+h1,
+h2,
+h3,
+h4,
+h5,
+p,
+button,
+tr,
+span,
+thead,
+table {
+  font-family: "Alata", sans-serif !important;
+  font-weight: 400;
+  font-style: normal;
+}
+
+code,
+pre,
+kbd,
+samp {
+  font-family: "JetBrains Mono", monospace !important;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+.topbar-wrapper > a > svg {
+  display: none;
+  content: url("/logo.svg");
+}
+
+.topbar-wrapper > a {
+  display: inline-block;
+  height: 48px;
+  background-image: url("/logo.svg");
+  background-repeat: no-repeat;
+  background-position: left;
+  background-size: auto 40px;
+}
+
+.swagger-ui .topbar {
+  background-color: #f8f9fa;
+  border: none;
+}
+
+.version-stamp {
+  background: rgb(139, 92, 246) !important;
+}
