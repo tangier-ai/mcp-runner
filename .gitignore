@@ -50,3 +50,5 @@ tmp*
 # Sentry Config File
 .sentryclirc
 generated/
+
+tmp_*

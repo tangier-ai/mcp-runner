@@ -18,7 +18,7 @@
     "node"
   ],
   "author": "Abir Taheer",
-  "license": "Apache-2.0",
+  "license": "GPL-3.0-only",
   "bugs": {
     "url": "https://github.com/tangier-ai/mcp-runner/issues"
   },
