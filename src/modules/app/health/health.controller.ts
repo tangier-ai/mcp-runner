@@ -14,7 +14,6 @@ export class HealthController {
     description: "The API is healthy",
     type: HealthOkResponse,
   })
-  @ApiOkResponse({})
   getHealth() {
     return {
       status: "ok",

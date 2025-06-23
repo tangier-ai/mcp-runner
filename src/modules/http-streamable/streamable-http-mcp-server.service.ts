@@ -10,7 +10,11 @@ export class StreamableHttpMcpServerService {
   private transports: { [sessionId: string]: StreamableHTTPServerTransport } =
     {};
 
-  async handlePostRequest(req: Request, res: Response): Promise<void> {
+  async handlePostRequest(
+    deploymentId: string,
+    req: Request,
+    res: Response,
+  ): Promise<void> {
     const sessionId = req.headers["mcp-session-id"] as string | undefined;
     let transport: StreamableHTTPServerTransport;
 
@@ -57,9 +61,17 @@ export class StreamableHttpMcpServerService {
     // we do this in case we're behind an NGINX proxy because otherwise buffering prevents streaming from working
     res.setHeader("X-Accel-Buffering", "no");
     await transport.handleRequest(req, res, req.body);
+
+    if (transport.sessionId && !this.transports[transport.sessionId]) {
+      this.transports[transport.sessionId] = transport;
+    }
   }
 
-  async handleTransportRequest(req: Request, res: Response): Promise<void> {
+  async handleTransportRequest(
+    deploymentId: string,
+    req: Request,
+    res: Response,
+  ): Promise<void> {
     const sessionId = req.headers["mcp-session-id"] as string | undefined;
 
     // can't GET if sessionId is not provided

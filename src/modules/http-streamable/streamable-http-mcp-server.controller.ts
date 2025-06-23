@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, Param, Req, Res, Sse } from "@nestjs/common";
+import { Controller, Delete, Get, Param, Post, Req, Res } from "@nestjs/common";
 import { Request, Response } from "express";
 import { StreamableHttpMcpServerService } from "./streamable-http-mcp-server.service";
 
@@ -8,15 +8,31 @@ export class StreamableHttpMcpServerController {
     private readonly streamableHttpMcpServerService: StreamableHttpMcpServerService,
   ) {}
 
+  @Post()
+  async handlePost(
+    @Param("deployment_id") deploymentId: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    await this.streamableHttpMcpServerService.handlePostRequest(
+      deploymentId,
+      req,
+      res,
+    );
+  }
+
   @Get()
-  @Sse()
   async handleGet(
     @Param("deployment_id") deploymentId: string,
     @Req() req: Request,
     @Res() res: Response,
   ): Promise<void> {
     // the streamable HTTP MCP server will manage the Get request
-    await this.streamableHttpMcpServerService.handleTransportRequest(req, res);
+    await this.streamableHttpMcpServerService.handleTransportRequest(
+      deploymentId,
+      req,
+      res,
+    );
   }
 
   @Delete()
@@ -26,6 +42,10 @@ export class StreamableHttpMcpServerController {
     @Res() res: Response,
   ): Promise<void> {
     // the streamable HTTP MCP server will manage the Delete request
-    await this.streamableHttpMcpServerService.handleTransportRequest(req, res);
+    await this.streamableHttpMcpServerService.handleTransportRequest(
+      deploymentId,
+      req,
+      res,
+    );
   }
 }

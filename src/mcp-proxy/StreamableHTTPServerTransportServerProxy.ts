@@ -4,7 +4,6 @@ import {
 } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { InMemoryEventStore } from "../utils/InMemoryEventStore";
-import { sessionIdGenerator } from "../utils/sessionIdGenerator";
 
 /*
  * Terminology:
@@ -27,11 +26,6 @@ export class StreamableHTTPServerTransportServerProxy extends StreamableHTTPServ
     // Options for the Streamable HTTP Server Transport
     options: StreamableHTTPServerTransportOptions,
   ) {
-    // ensure we always have a sessionIdGenerator
-    if (!options.sessionIdGenerator) {
-      options.sessionIdGenerator = sessionIdGenerator;
-    }
-
     // ensure we have an event store for resumability support
     if (!options.eventStore) {
       options.eventStore = new InMemoryEventStore();
