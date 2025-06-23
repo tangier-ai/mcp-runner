@@ -5,6 +5,7 @@ import { ContainerController } from "./container/container.controller";
 import { ContainerService } from "./container/container.service";
 import { HealthController } from "./health/health.controller";
 import { StreamableHttpMcpServerModule } from "./mcp-server/http-streamable/streamable-http-mcp-server.module";
+import { SSEMcpServerModule } from "./mcp-server/sse/sse-mcp-server.module";
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { StreamableHttpMcpServerModule } from "./mcp-server/http-streamable/stre
         fallthrough: false,
       },
     }),
+    SSEMcpServerModule,
     StreamableHttpMcpServerModule,
   ],
   controllers: [HealthController, ContainerController],
