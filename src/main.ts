@@ -1,12 +1,14 @@
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
+import { ExpressAdapter } from "@nestjs/platform-express";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const expressAdapter = new ExpressAdapter();
+
+  const app = await NestFactory.create(AppModule, expressAdapter);
   app.useGlobalPipes(new ValidationPipe());
-  app.setGlobalPrefix("/api");
 
   const config = new DocumentBuilder()
     .setTitle("Tangier MCP Runner API")

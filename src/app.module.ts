@@ -4,6 +4,7 @@ import { join } from "path";
 import { ContainerController } from "./container/container.controller";
 import { ContainerService } from "./container/container.service";
 import { HealthController } from "./health/health.controller";
+import { StreamableHttpMcpServerModule } from "./mcp-server/http-streamable/streamable-http-mcp-server.module";
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { HealthController } from "./health/health.controller";
         fallthrough: false,
       },
     }),
+    StreamableHttpMcpServerModule,
   ],
   controllers: [HealthController, ContainerController],
   providers: [ContainerService],

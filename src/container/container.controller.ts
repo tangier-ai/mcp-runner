@@ -7,7 +7,7 @@ import {
 } from "./container.types";
 
 @Controller({
-  path: "container",
+  path: "/api/container",
 })
 @ApiTags("Container")
 export class ContainerController {
