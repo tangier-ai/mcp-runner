@@ -18,7 +18,7 @@ async function bootstrap() {
 
   const documentFactory = () => SwaggerModule.createDocument(app, config);
 
-  SwaggerModule.setup("/", app, documentFactory, {
+  SwaggerModule.setup("/api", app, documentFactory, {
     ui: true,
     customSiteTitle: "Tangier MCP Runner API",
     customfavIcon: "/icon.svg",
