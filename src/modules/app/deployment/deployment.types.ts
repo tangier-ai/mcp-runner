@@ -21,7 +21,7 @@ export class CreateDeploymentBody {
   @Matches(/^[a-z0-9\/._-]+:[a-z0-9._-]+$/, {
     message: "Image must contain a tag in the format 'name:tag'",
   })
-  imageId: string;
+  image: string;
 
   @IsOptional()
   @IsString({ each: true })
@@ -118,7 +118,7 @@ export class DeploymentInfo {
 
   // Docker image ID used for the deployment
   @IsString()
-  imageId: string;
+  image: string;
 
   // Username of the unprivileged user created for this deployment
   @IsString()
@@ -213,7 +213,7 @@ export class DeploymentResponse {
     example: "mcp/time:latest",
     description: "The Docker image ID used for the deployment",
   })
-  imageId: string;
+  image: string;
 
   @ApiProperty({
     type: Number,

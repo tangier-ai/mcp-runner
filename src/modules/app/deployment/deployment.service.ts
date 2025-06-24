@@ -3,6 +3,8 @@ import { exec } from "child_process";
 import { randomBytes } from "crypto";
 import Dockerode from "dockerode";
 import { promisify } from "util";
+import { deploymentStore } from "../../../store/deployment.store";
+import { tryCatchPromise } from "../../../utils/tryCatchPromise";
 import { CreateDeploymentBody, DeploymentInfo } from "./deployment.types";
 
 const execAsync = promisify(exec);
@@ -10,8 +12,6 @@ const execAsync = promisify(exec);
 @Injectable()
 export class DeploymentService implements OnModuleDestroy {
   private docker: Dockerode;
-  private deployments = new Map<string, DeploymentInfo>();
-  private userCounter = 0;
   private isShuttingDown = false;
 
   constructor() {
@@ -42,7 +42,7 @@ export class DeploymentService implements OnModuleDestroy {
   }
 
   private async cleanupAllDeployments(graceful: boolean) {
-    const deploymentIds = Array.from(this.deployments.keys());
+    const deploymentIds = Array.from(deploymentStore.keys());
 
     await Promise.all(
       deploymentIds.map((deploymentId) =>
@@ -53,27 +53,40 @@ export class DeploymentService implements OnModuleDestroy {
 
   private async cleanupDeployment(deploymentId: string, graceful: boolean) {
     try {
-      const deployment = this.deployments.get(deploymentId);
+      const deployment = deploymentStore.get(deploymentId);
       if (deployment) {
         const container = this.docker.getContainer(deployment.containerId);
 
         if (graceful) {
-          await container.stop({ t: 10 });
+          const [, stopError] = await tryCatchPromise(
+            container.stop({ t: 10 }),
+          );
+
+          if (stopError && (stopError as any).statusCode !== 304) {
+            throw stopError;
+          }
         } else {
-          await container.kill();
+          const [, killError] = await tryCatchPromise(container.kill());
+          if (killError && (killError as any).statusCode !== 304) {
+            throw killError;
+          }
         }
 
         await container.remove();
 
         await this.cleanupNetwork(deploymentId);
 
-        try {
-          await execAsync(`sudo userdel -r ${deployment.username}`);
-        } catch (error) {
-          console.warn(`Failed to delete user ${deployment.username}:`, error);
+        const [, userDeleteError] = await tryCatchPromise(
+          execAsync(`sudo userdel ${deployment.username}`),
+        );
+        if (userDeleteError) {
+          console.warn(
+            `Failed to delete user ${deployment.username}:`,
+            userDeleteError,
+          );
         }
 
-        this.deployments.delete(deploymentId);
+        deploymentStore.delete(deploymentId);
       }
     } catch (error) {
       console.error(`Error cleaning up deployment ${deploymentId}:`, error);
@@ -85,110 +98,154 @@ export class DeploymentService implements OnModuleDestroy {
     uid: number;
     gid: number;
   }> {
-    const username = `deploy-${Date.now()}-${this.userCounter++}`;
+    const username = randomBytes(16).toString("hex");
 
-    try {
-      await execAsync(`sudo useradd -r -s /bin/false -M ${username}`);
+    const [, userCreateError] = await tryCatchPromise(
+      execAsync(`sudo useradd -r -s /bin/false -M ${username}`),
+    );
 
-      const { stdout } = await execAsync(`id ${username}`);
-      const match = stdout.match(/uid=(\d+).*gid=(\d+)/);
-
-      if (!match) {
-        throw new Error(`Failed to parse user info for ${username}`);
-      }
-
-      const uid = parseInt(match[1]);
-      const gid = parseInt(match[2]);
-
-      return { username, uid, gid };
-    } catch (error) {
-      throw new Error(`Failed to create user ${username}: ${error.message}`);
-    }
-  }
-
-  private async createIsolatedNetwork(deploymentId: string): Promise<string> {
-    const networkName = `container-${deploymentId}-network`;
-
-    try {
-      const network = await this.docker.createNetwork({
-        Name: networkName,
-        Driver: "bridge",
-        Internal: false,
-        Attachable: false,
-        Ingress: false,
-        EnableIPv6: false,
-        IPAM: {
-          Driver: "default",
-          Config: [
-            {
-              Subnet: "172.31.0.0/16",
-            },
-          ],
-        },
-        Options: {
-          "com.docker.network.bridge.enable_icc": "false",
-          "com.docker.network.bridge.enable_ip_masquerade": "true",
-        },
-        Labels: {
-          "secure-mcp-runner.type": "deployment-network",
-          "secure-mcp-runner.deployment-id": deploymentId,
-          "secure-mcp-runner.created": new Date().toISOString(),
-        },
-      });
-
-      return network.id;
-    } catch (error) {
+    if (userCreateError) {
       throw new Error(
-        `Failed to create isolated network for ${deploymentId}: ${error.message}`,
+        `Failed to create user ${username}: ${userCreateError.message}`,
       );
     }
+
+    const [idResult, idError] = await tryCatchPromise(
+      execAsync(`id ${username}`),
+    );
+    if (idError) {
+      throw new Error(
+        `Failed to get user info for ${username}: ${idError.message}`,
+      );
+    }
+
+    const match = idResult!.stdout.match(/uid=(\d+).*gid=(\d+)/);
+    if (!match) {
+      throw new Error(`Failed to parse user info for ${username}`);
+    }
+
+    const uid = parseInt(match[1]);
+    const gid = parseInt(match[2]);
+
+    return { username, uid, gid };
+  }
+
+  private async createIsolatedNetwork(deploymentId: string) {
+    const Name = `container-${deploymentId}-network`;
+
+    const network = await this.docker.createNetwork({
+      Name,
+      Driver: "bridge",
+      Internal: false,
+      Attachable: false,
+      Ingress: false,
+      IPAM: {
+        Driver: "default",
+        Options: {
+          "com.docker.network.driver.mtu": "1500",
+        },
+      },
+      EnableIPv4: true,
+      Options: {
+        "com.docker.network.bridge.enable_icc": "false",
+        "com.docker.network.bridge.enable_ip_masquerade": "true",
+        "com.docker.network.bridge.name": `br-${deploymentId.substring(0, 12)}`,
+      },
+      Labels: {
+        "mcp-runner.deployment-id": deploymentId,
+      },
+    });
+
+    return network;
   }
 
   private async cleanupNetwork(deploymentId: string): Promise<void> {
     const networkName = `container-${deploymentId}-network`;
 
-    try {
-      const networks = await this.docker.listNetworks({
+    const [networks, listError] = await tryCatchPromise(
+      this.docker.listNetworks({
         filters: {
           name: [networkName],
         },
-      });
+      }),
+    );
 
-      for (const networkInfo of networks) {
-        const network = this.docker.getNetwork(networkInfo.Id);
-        await network.remove();
+    if (listError) {
+      console.error(listError);
+      throw new Error(
+        "Failed to list networks for cleanup: " + listError.message,
+      );
+    }
+
+    for (const networkInfo of networks) {
+      const network = this.docker.getNetwork(networkInfo.Id);
+      const [, removeError] = await tryCatchPromise(network.remove());
+
+      if (removeError) {
+        console.warn(
+          `Failed to remove network ${networkInfo.Id}:`,
+          removeError,
+        );
       }
-    } catch (error) {
-      console.warn(`Failed to cleanup network for ${deploymentId}:`, error);
     }
   }
 
-  private async pullImage(imageId: string): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.docker.pull(imageId, (err: any, stream: any) => {
-        if (err) {
-          reject(new Error(`Failed to pull image ${imageId}: ${err.message}`));
-          return;
-        }
+  private async partialCleanup(
+    deploymentId: string,
+    options?: {
+      username?: string;
+      cleanupNetwork?: boolean;
+    },
+  ): Promise<void> {
+    if (options?.cleanupNetwork) {
+      await this.cleanupNetwork(deploymentId);
+    }
 
-        this.docker.modem.followProgress(stream, (err: any, res: any) => {
+    if (options?.username) {
+      const [, userCleanupError] = await tryCatchPromise(
+        execAsync(`sudo userdel -r ${options.username}`),
+      );
+
+      if (userCleanupError) {
+        console.warn(
+          `Failed to cleanup user during error recovery:`,
+          userCleanupError,
+        );
+      }
+    }
+  }
+
+  private async pullImage(image: string): Promise<void> {
+    const [stream, pullError] = await tryCatchPromise(this.docker.pull(image));
+
+    if (pullError) {
+      throw new Error(`Failed to pull image ${image}: ${pullError.message}`);
+    }
+
+    const [, followError] = await tryCatchPromise(
+      new Promise<void>((resolve, reject) => {
+        this.docker.modem.followProgress(stream, (err: any) => {
           if (err) {
-            reject(
-              new Error(`Failed to pull image ${imageId}: ${err.message}`),
-            );
+            reject(new Error(`Failed to pull image ${image}: ${err.message}`));
           } else {
-            console.log(`Successfully pulled image ${imageId}`);
+            console.log(`Successfully pulled image ${image}`);
             resolve();
           }
         });
-      });
-    });
+      }),
+    );
+
+    if (followError) {
+      throw followError;
+    }
   }
 
   private async pullImageIfNeeded(imageId: string): Promise<void> {
-    try {
-      await this.docker.getImage(imageId).inspect();
-    } catch (error) {
+    const [, inspectError] = await tryCatchPromise(
+      this.docker.getImage(imageId).inspect(),
+    );
+
+    if (inspectError) {
       console.log(`Image ${imageId} not found locally, pulling...`);
       await this.pullImage(imageId);
     }
@@ -198,7 +255,7 @@ export class DeploymentService implements OnModuleDestroy {
     deploymentData: CreateDeploymentBody,
   ): Promise<string> {
     const {
-      imageId,
+      image,
       args = [],
       envVars = {},
       maxMemory,
@@ -207,48 +264,83 @@ export class DeploymentService implements OnModuleDestroy {
       metadata,
     } = deploymentData;
 
-    await this.pullImageIfNeeded(imageId);
+    await this.pullImageIfNeeded(image);
 
     const deploymentId = randomBytes(64).toString("base64url");
     const userInfo = await this.createUnprivilegedUser();
-    const networkId = await this.createIsolatedNetwork(deploymentId);
+    const [network, networkCreationError] = await tryCatchPromise(
+      this.createIsolatedNetwork(deploymentId),
+    );
+
+    if (networkCreationError) {
+      await this.partialCleanup(deploymentId, {
+        username: userInfo.username,
+        cleanupNetwork: false,
+      });
+
+      throw new Error(
+        `Failed to create isolated network for deployment ${deploymentId}: ${networkCreationError.message}`,
+      );
+    }
+
     const networkName = `container-${deploymentId}-network`;
 
-    const envArray = Object.entries(envVars).map(
-      ([key, value]) => `${key}=${value}`,
-    );
+    const envArray = Object.entries({
+      ...envVars,
+    }).map(([key, value]) => `${key}=${value}`);
+
     const now = new Date();
 
     const containerOptions: Dockerode.ContainerCreateOptions = {
-      Image: imageId,
+      Image: image,
+      name: deploymentId,
       Cmd: args.length > 0 ? args : undefined,
       Env: envArray.length > 0 ? envArray : undefined,
+      OpenStdin: true,
       User: `${userInfo.uid}:${userInfo.gid}`,
+      Tty: true,
+      AttachStdin: true,
+      AttachStdout: true,
       HostConfig: {
-        Runtime: "/usr/bin/runsc",
+        // super important! we need to use gVisor as our runtime
+        Runtime: "runsc",
+
         NetworkMode: networkName,
+
         SecurityOpt: [
+          // do not allow privilege escalation
           "no-new-privileges:true",
           "apparmor:unconfined",
           "seccomp:unconfined",
         ],
-        CapDrop: ["ALL"],
+
+        // drop these for security
+        CapDrop: ["SYS_ADMIN", "NET_ADMIN", "SYS_PTRACE", "SYS_MODULE"],
+
         ReadonlyRootfs: false,
         Privileged: false,
+
+        // google / cloudflare for dns
+        Dns: ["8.8.8.8", "1.1.1.1"],
+
+        // nginx specific mounts, doesn't work otherwise
+        Tmpfs: {
+          "/var/cache/nginx": "rw,noexec,nosuid,size=100m",
+          "/var/run": "rw,noexec,nosuid,size=100m",
+        },
       },
+
       NetworkingConfig: {
         EndpointsConfig: {
           [networkName]: {
-            NetworkID: networkId,
+            NetworkID: network.id,
           },
         },
       },
+
       Labels: {
-        "secure-mcp-runner.type": "deployment",
-        "secure-mcp-runner.created": now.toISOString(),
-        "secure-mcp-runner.username": userInfo.username,
-        "secure-mcp-runner.deployment-id": deploymentId,
-        "secure-mcp-runner.network-id": networkId,
+        "mcp-runner.username": userInfo.username,
+        "mcp-runner.deployment-id": deploymentId,
       },
     };
 
@@ -261,59 +353,62 @@ export class DeploymentService implements OnModuleDestroy {
     }
 
     if (maxInactivityDeletion !== null) {
-      containerOptions.Labels!["secure-mcp-runner.max-inactivity"] =
+      containerOptions.Labels!["mcp-runner.max-inactivity"] =
         maxInactivityDeletion.toString();
     }
 
-    try {
-      const container = await this.docker.createContainer(containerOptions);
+    const [container, createError] = await tryCatchPromise(
+      this.docker.createContainer(containerOptions),
+    );
 
-      const deploymentInfo: DeploymentInfo = {
-        id: deploymentId,
-        containerId: container.id,
-        imageId,
+    if (createError) {
+      await this.partialCleanup(deploymentId, {
         username: userInfo.username,
-        uid: userInfo.uid,
-        gid: userInfo.gid,
-        args,
-        envVars,
-        maxMemory,
-        maxCpus,
-        maxInactivityDeletion,
-        createdAt: now,
-        lastInteraction: now,
-        metadata,
-      };
-
-      await container.start();
-
-      this.deployments.set(deploymentId, deploymentInfo);
-
-      return deploymentId;
-    } catch (error) {
-      await this.cleanupNetwork(deploymentId);
-      try {
-        await execAsync(`sudo userdel -r ${userInfo.username}`);
-      } catch (cleanupError) {
-        console.warn(
-          `Failed to cleanup user during error recovery:`,
-          cleanupError,
-        );
-      }
-      throw error;
+        cleanupNetwork: true,
+      });
+      throw createError;
     }
+
+    const deploymentInfo: DeploymentInfo = {
+      id: deploymentId,
+      containerId: container!.id,
+      image,
+      username: userInfo.username,
+      uid: userInfo.uid,
+      gid: userInfo.gid,
+      maxMemory,
+      maxCpus,
+      maxInactivityDeletion,
+      createdAt: now,
+      lastInteraction: now,
+      metadata,
+    };
+
+    const [, startError] = await tryCatchPromise(container!.start());
+
+    if (startError) {
+      await this.partialCleanup(deploymentId, {
+        username: userInfo.username,
+        cleanupNetwork: true,
+      });
+      throw startError;
+    }
+
+    deploymentStore.set(deploymentId, deploymentInfo);
+
+    return deploymentId;
   }
 
   getDeployment(deploymentId: string): DeploymentInfo | undefined {
-    return this.deployments.get(deploymentId);
+    return deploymentStore.get(deploymentId);
   }
 
   getAllDeployments(): DeploymentInfo[] {
-    return Array.from(this.deployments.values());
+    return Array.from(deploymentStore.values());
   }
 
   updateLastInteraction(deploymentId: string): void {
-    const deployment = this.deployments.get(deploymentId);
+    const deployment = deploymentStore.get(deploymentId);
     if (deployment) {
       deployment.lastInteraction = new Date();
     }

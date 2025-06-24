@@ -41,7 +41,7 @@ export class DeploymentController {
     const deployments = this.deploymentService.getAllDeployments();
     return deployments.map((deployment) => ({
       id: deployment.id,
-      image: deployment.imageId,
+      image: deployment.image,
       userGid: deployment.gid,
     }));
   }
@@ -66,7 +66,7 @@ export class DeploymentController {
 
     return {
       id: deployment.id,
-      imageId: deployment.imageId,
+      image: deployment.image,
       userGid: deployment.gid,
       metadata: deployment.metadata,
       createdAt: deployment.createdAt,
