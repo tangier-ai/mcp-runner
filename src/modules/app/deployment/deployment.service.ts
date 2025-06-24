@@ -2,6 +2,7 @@ import { Injectable, OnModuleDestroy } from "@nestjs/common";
 import { exec } from "child_process";
 import { randomBytes } from "crypto";
 import Dockerode from "dockerode";
+import { PassThrough } from "stream";
 import { promisify } from "util";
 import { deploymentStore } from "../../../store/deployment.store";
 import { tryCatchPromise } from "../../../utils/tryCatchPromise";
@@ -52,6 +53,10 @@ export class DeploymentService implements OnModuleDestroy {
   }
 
   private async cleanupDeployment(deploymentId: string, graceful: boolean) {
+    const canIgnoreError = (error: Error) =>
+      "statusCode" in error &&
+      (error.statusCode === 304 || error.statusCode === 404);
+
     try {
       const deployment = deploymentStore.get(deploymentId);
       if (deployment) {
@@ -62,23 +67,37 @@ export class DeploymentService implements OnModuleDestroy {
             container.stop({ t: 10 }),
           );
 
-          if (stopError && (stopError as any).statusCode !== 304) {
+          if (stopError && !canIgnoreError(stopError)) {
             throw stopError;
           }
         } else {
           const [, killError] = await tryCatchPromise(container.kill());
-          if (killError && (killError as any).statusCode !== 304) {
+          if (killError && !canIgnoreError(killError)) {
             throw killError;
           }
         }
 
-        await container.remove();
+        const [, removalError] = await tryCatchPromise(container.remove());
 
-        await this.cleanupNetwork(deploymentId);
+        if (!!removalError && !canIgnoreError(removalError)) {
+          console.warn(removalError);
+        }
+
+        const [, networkCleanupError] = await tryCatchPromise(
+          this.cleanupNetwork(deploymentId),
+        );
+
+        if (networkCleanupError) {
+          console.warn(
+            `Failed to cleanup network for deployment ${deploymentId}:`,
+            networkCleanupError,
+          );
+        }
 
         const [, userDeleteError] = await tryCatchPromise(
           execAsync(`sudo userdel ${deployment.username}`),
         );
+
         if (userDeleteError) {
           console.warn(
             `Failed to delete user ${deployment.username}:`,
@@ -119,7 +138,7 @@ export class DeploymentService implements OnModuleDestroy {
       );
     }
 
-    const match = idResult!.stdout.match(/uid=(\d+).*gid=(\d+)/);
+    const match = idResult?.stdout.match(/uid=(\d+).*gid=(\d+)/);
     if (!match) {
       throw new Error(`Failed to parse user info for ${username}`);
     }
@@ -293,14 +312,15 @@ export class DeploymentService implements OnModuleDestroy {
 
     const containerOptions: Dockerode.ContainerCreateOptions = {
       Image: image,
-      name: deploymentId,
       Cmd: args.length > 0 ? args : undefined,
+      name: deploymentId,
       Env: envArray.length > 0 ? envArray : undefined,
       OpenStdin: true,
       User: `${userInfo.uid}:${userInfo.gid}`,
-      Tty: true,
+      Tty: false,
       AttachStdin: true,
       AttachStdout: true,
+      AttachStderr: true,
       HostConfig: {
         // super important! we need to use gVisor as our runtime
         Runtime: "runsc",
@@ -328,6 +348,9 @@ export class DeploymentService implements OnModuleDestroy {
           "/var/cache/nginx": "rw,noexec,nosuid,size=100m",
           "/var/run": "rw,noexec,nosuid,size=100m",
         },
+
+        // Auto-remove container on exit
+        AutoRemove: true,
       },
 
       NetworkingConfig: {
@@ -369,9 +392,11 @@ export class DeploymentService implements OnModuleDestroy {
       throw createError;
     }
 
+    const stderr = new PassThrough();
+
     const deploymentInfo: DeploymentInfo = {
       id: deploymentId,
-      containerId: container!.id,
+      containerId: container.id,
       image,
       username: userInfo.username,
       uid: userInfo.uid,
@@ -382,9 +407,18 @@ export class DeploymentService implements OnModuleDestroy {
       createdAt: now,
       lastInteraction: now,
       metadata,
+      state: "started",
     };
 
-    const [, startError] = await tryCatchPromise(container!.start());
+    stderr.on("data", async (chunk) => {
+      const data = chunk.toString();
+
+      deploymentInfo.error = deploymentInfo.error
+        ? deploymentInfo.error + data
+        : data;
+    });
+
+    const [, startError] = await tryCatchPromise(container.start());
 
     if (startError) {
       await this.partialCleanup(deploymentId, {
@@ -393,6 +427,18 @@ export class DeploymentService implements OnModuleDestroy {
       });
       throw startError;
     }
+
+    // stderr stream
+    const stream = await container.attach({
+      stream: true,
+      stdout: false,
+      stderr: true,
+      stdin: false,
+    });
+
+    stream.pipe(stderr, { end: false });
+
+    deploymentInfo.containerId = container.id;
 
     deploymentStore.set(deploymentId, deploymentInfo);
 

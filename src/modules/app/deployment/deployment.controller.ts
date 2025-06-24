@@ -34,7 +34,8 @@ export class DeploymentController {
 
   @Get("/")
   @ApiOkResponse({
-    type: [DeploymentListItem],
+    type: DeploymentListItem,
+    isArray: true,
     description: "List of all deployments with basic information",
   })
   async listDeployments(): Promise<DeploymentListItem[]> {
@@ -56,21 +57,15 @@ export class DeploymentController {
     type: DeploymentResponse,
     description: "Detailed information about a specific deployment",
   })
-  async getDeployment(
-    @Param("id") id: string,
-  ): Promise<DeploymentResponse | null> {
+  async getDeployment(@Param("id") id: string): Promise<DeploymentResponse> {
     const deployment = this.deploymentService.getDeployment(id);
+
     if (!deployment) {
-      return null;
+      return { deployment: null };
     }
 
     return {
-      id: deployment.id,
-      image: deployment.image,
-      userGid: deployment.gid,
-      metadata: deployment.metadata,
-      createdAt: deployment.createdAt,
-      lastInteraction: deployment.lastInteraction,
+      deployment,
     };
   }
 }

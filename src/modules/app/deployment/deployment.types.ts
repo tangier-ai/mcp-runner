@@ -170,6 +170,12 @@ export class DeploymentInfo {
   @IsOptional()
   @IsObject()
   metadata?: Record<string, any>;
+
+  // Deployment state
+  state: "started" | "error" | "removed";
+
+  // Error message from stderr if state is error
+  error?: string;
 }
 
 export class DeploymentListItem {
@@ -200,50 +206,8 @@ export class DeploymentListItem {
 
 export class DeploymentResponse {
   @ApiProperty({
-    type: String,
-    required: true,
-    example: "deployment-1234567890abcdef",
-    description: "The ID of the deployment",
+    type: DeploymentInfo,
+    nullable: true,
   })
-  id: string;
-
-  @ApiProperty({
-    type: String,
-    required: true,
-    example: "mcp/time:latest",
-    description: "The Docker image ID used for the deployment",
-  })
-  image: string;
-
-  @ApiProperty({
-    type: Number,
-    required: true,
-    example: 1001,
-    description: "The GID of the unprivileged user for this deployment",
-  })
-  userGid: number;
-
-  @ApiProperty({
-    type: Object,
-    required: false,
-    example: { project: "my-app", version: "1.0.0" },
-    description: "Optional metadata for the deployment",
-  })
-  metadata?: Record<string, any>;
-
-  @ApiProperty({
-    type: Date,
-    required: true,
-    example: "2023-01-01T00:00:00.000Z",
-    description: "Timestamp when the deployment was created",
-  })
-  createdAt: Date;
-
-  @ApiProperty({
-    type: Date,
-    required: true,
-    example: "2023-01-01T00:00:00.000Z",
-    description: "Timestamp of the last interaction with the deployment",
-  })
-  lastInteraction: Date;
+  deployment: DeploymentInfo | null;
 }
