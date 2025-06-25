@@ -15,9 +15,13 @@ import { InMemoryEventStore } from "../utils/InMemoryEventStore";
  *
  */
 
+type CloseHandler = () => void;
+
 // This is a middle-man that wraps the Underlying MCP Server
 // This will let external clients use Streamable HTTP regardless of what transport the Underlying MCP Server uses.
 export class StreamableHTTPServerTransportServerProxy extends StreamableHTTPServerTransport {
+  onCloseHandlers: Array<CloseHandler> = [];
+
   // set up listeners in the constructor
   constructor(
     // The MCP Client Transport that connects to the Underlying MCP Server
@@ -46,12 +50,18 @@ export class StreamableHTTPServerTransportServerProxy extends StreamableHTTPServ
       client.close().catch((error) => {
         console.error("Error closing MCP Client Transport:", error);
       });
+
+      this.onCloseHandlers.forEach((handler) => handler());
     };
 
     client.onerror = (error) => {
       // when the MCP Client Transport encounters an error, it forwards it to the Streamable HTTP Server Transport
       this.onerror?.(error);
     };
+  }
+
+  addCloseHandler(handler: CloseHandler): void {
+    this.onCloseHandlers.push(handler);
   }
 
   async start(): Promise<void> {

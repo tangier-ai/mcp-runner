@@ -1,4 +1,5 @@
 import { Controller, Delete, Get, Param, Post, Req, Res } from "@nestjs/common";
+import { ApiParam, ApiTags } from "@nestjs/swagger";
 import { Request, Response } from "express";
 import { StreamableHttpMcpServerService } from "./streamable-http-mcp-server.service";
 
@@ -9,6 +10,11 @@ export class StreamableHttpMcpServerController {
   ) {}
 
   @Post()
+  @ApiParam({
+    name: "deployment_id",
+    type: String,
+    description: "The deployment ID",
+  })
   async handlePost(
     @Param("deployment_id") deploymentId: string,
     @Req() req: Request,
@@ -22,6 +28,11 @@ export class StreamableHttpMcpServerController {
   }
 
   @Get()
+  @ApiParam({
+    name: "deployment_id",
+    type: String,
+    description: "The deployment ID",
+  })
   async handleGet(
     @Param("deployment_id") deploymentId: string,
     @Req() req: Request,
@@ -36,6 +47,11 @@ export class StreamableHttpMcpServerController {
   }
 
   @Delete()
+  @ApiParam({
+    name: "deployment_id",
+    type: String,
+    description: "The deployment ID",
+  })
   async handleDelete(
     @Param("deployment_id") deploymentId: string,
     @Req() req: Request,
