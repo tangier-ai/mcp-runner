@@ -211,3 +211,65 @@ export class DeploymentResponse {
   })
   deployment: DeploymentInfo | null;
 }
+
+export class DeleteDeploymentResponse {
+  @ApiProperty({
+    type: String,
+    required: true,
+    example: "Deployment deleted successfully",
+    description: "A message indicating the result of the delete operation",
+  })
+  message: string;
+}
+
+export class ApiErrorResponse {
+  @ApiProperty({
+    type: String,
+    required: true,
+    example: "Not Found",
+    description: "HTTP error status text",
+  })
+  error: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    example: "Deployment with ID deployment-123 not found",
+    description: "Detailed error message",
+  })
+  message: string;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    example: 404,
+    description: "HTTP status code",
+  })
+  statusCode: number;
+}
+
+export class NotFoundResponse {
+  @ApiProperty({
+    type: String,
+    required: true,
+    example: "Not Found",
+    description: "HTTP error status text",
+  })
+  error: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    example: "Deployment with ID deployment-123 not found",
+    description: "Detailed error message",
+  })
+  message: string;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    example: 404,
+    description: "HTTP status code",
+  })
+  statusCode: number;
+}

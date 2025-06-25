@@ -1,11 +1,13 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
-import { ApiBody, ApiOkResponse, ApiParam, ApiTags } from "@nestjs/swagger";
+import { Body, Controller, Delete, Get, NotFoundException, Param, Post } from "@nestjs/common";
+import { ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiParam, ApiTags } from "@nestjs/swagger";
 import { DeploymentService } from "./deployment.service";
 import {
   CreateDeploymentBody,
   CreateDeploymentOkResponse,
+  DeleteDeploymentResponse,
   DeploymentListItem,
   DeploymentResponse,
+  NotFoundResponse,
 } from "./deployment.types";
 
 @Controller({
@@ -57,15 +59,47 @@ export class DeploymentController {
     type: DeploymentResponse,
     description: "Detailed information about a specific deployment",
   })
+  @ApiNotFoundResponse({
+    type: NotFoundResponse,
+    description: "Deployment not found",
+  })
   async getDeployment(@Param("id") id: string): Promise<DeploymentResponse> {
     const deployment = this.deploymentService.getDeployment(id);
 
     if (!deployment) {
-      return { deployment: null };
+      throw new NotFoundException(`Deployment with ID ${id} not found`);
     }
 
     return {
       deployment,
+    };
+  }
+
+  @Delete("/:id")
+  @ApiParam({
+    name: "id",
+    type: String,
+    description: "The deployment ID to delete",
+  })
+  @ApiOkResponse({
+    type: DeleteDeploymentResponse,
+    description: "Deployment deleted successfully",
+  })
+  @ApiNotFoundResponse({
+    type: NotFoundResponse,
+    description: "Deployment not found",
+  })
+  async deleteDeployment(@Param("id") id: string): Promise<DeleteDeploymentResponse> {
+    const deployment = this.deploymentService.getDeployment(id);
+    
+    if (!deployment) {
+      throw new NotFoundException(`Deployment with ID ${id} not found`);
+    }
+
+    await this.deploymentService.deleteDeployment(id);
+
+    return {
+      message: "Deployment deleted successfully",
     };
   }
 }

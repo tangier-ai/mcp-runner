@@ -459,4 +459,8 @@ export class DeploymentService implements OnModuleDestroy {
       deployment.lastInteraction = new Date();
     }
   }
+
+  async deleteDeployment(deploymentId: string): Promise<void> {
+    await this.cleanupDeployment(deploymentId, true);
+  }
 }
