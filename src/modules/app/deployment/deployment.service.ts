@@ -395,11 +395,6 @@ export class DeploymentService implements OnModuleDestroy {
 
     const stderr = new PassThrough();
 
-    const containerInspectData = await container.inspect();
-
-    const ipAddress =
-      containerInspectData.NetworkSettings.Networks[network.id].IPAddress;
-
     const deploymentInfo: DeploymentInfo = {
       id: deploymentId,
       containerId: container.id,
@@ -413,7 +408,7 @@ export class DeploymentService implements OnModuleDestroy {
       createdAt: now,
       lastInteraction: now,
       metadata,
-      ipAddress,
+      ipAddress: "",
       state: "started",
       transport,
     };
@@ -427,6 +422,11 @@ export class DeploymentService implements OnModuleDestroy {
     });
 
     const [, startError] = await tryCatchPromise(container.start());
+
+    const containerInspectData = await container.inspect();
+
+    deploymentInfo.ipAddress =
+      containerInspectData.NetworkSettings.Networks[networkName].IPAddress;
 
     if (startError) {
       await this.partialCleanup(deploymentId, {

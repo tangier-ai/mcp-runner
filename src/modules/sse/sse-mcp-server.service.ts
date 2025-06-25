@@ -46,10 +46,6 @@ export class SSEMcpServerService {
 
     let client: Transport;
 
-    const url = new URL(
-      "http://" + deployment.ipAddress + deployment.transport.endpoint,
-    );
-
     const authProvider = await this.getOAuthProvider(req);
 
     if (deployment.transport.type === "stdio") {
@@ -58,8 +54,14 @@ export class SSEMcpServerService {
         args: ["attach", deployment.containerId],
       });
     } else if (deployment.transport.type === "sse") {
+      const url = new URL(deployment.transport.endpoint as string);
+      url.hostname = deployment.ipAddress;
+
       client = new SSEClientTransport(url, { authProvider });
     } else if (deployment.transport.type === "streamable_http") {
+      const url = new URL(deployment.transport.endpoint as string);
+      url.hostname = deployment.ipAddress;
+
       client = new StreamableHTTPClientTransport(url, { authProvider });
     } else {
       throw new Error(

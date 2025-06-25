@@ -23,7 +23,6 @@ export class TransportInput {
   type: "stdio" | "sse" | "streamable_http";
 
   @ValidateIf((obj) => obj.type === "sse" || obj.type === "streamable_http")
-  @IsUrl()
   @ApiProperty({
     type: String,
     required: false,
