@@ -71,6 +71,8 @@ export class StreamableHttpMcpServerService {
           delete this.transports[transport.sessionId];
         }
       });
+
+      await transport.start();
     } else {
       res.status(400).json({
         jsonrpc: "2.0",
