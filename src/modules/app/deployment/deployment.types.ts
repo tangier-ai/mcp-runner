@@ -208,6 +208,10 @@ export class DeploymentInfo {
   @Min(1)
   maxMemory?: number;
 
+  // the ip address of the network interface for this deployment
+  @IsString()
+  ipAddress: string;
+
   // Maximum CPU cores limit
   @IsOptional()
   @IsNumber()

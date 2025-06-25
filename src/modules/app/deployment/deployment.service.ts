@@ -12,7 +12,7 @@ const execAsync = promisify(exec);
 
 @Injectable()
 export class DeploymentService implements OnModuleDestroy {
-  private docker: Dockerode;
+  public readonly docker: Dockerode;
   private isShuttingDown = false;
 
   constructor() {
@@ -149,7 +149,7 @@ export class DeploymentService implements OnModuleDestroy {
     return { username, uid, gid };
   }
 
-  private async createIsolatedNetwork(deploymentId: string) {
+  async createIsolatedNetwork(deploymentId: string) {
     const Name = `container-${deploymentId}-network`;
 
     const network = await this.docker.createNetwork({
@@ -395,6 +395,11 @@ export class DeploymentService implements OnModuleDestroy {
 
     const stderr = new PassThrough();
 
+    const containerInspectData = await container.inspect();
+
+    const ipAddress =
+      containerInspectData.NetworkSettings.Networks[network.id].IPAddress;
+
     const deploymentInfo: DeploymentInfo = {
       id: deploymentId,
       containerId: container.id,
@@ -408,6 +413,7 @@ export class DeploymentService implements OnModuleDestroy {
       createdAt: now,
       lastInteraction: now,
       metadata,
+      ipAddress,
       state: "started",
       transport,
     };

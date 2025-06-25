@@ -1,4 +1,7 @@
+import { OAuthClientProvider } from "@modelcontextprotocol/sdk/client/auth.js";
+import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { Injectable } from "@nestjs/common";
@@ -9,6 +12,8 @@ import { DeploymentService } from "../app/deployment/deployment.service";
 
 export type TransportProxy = StreamableHTTPServerTransportServerProxy;
 
+// TODO WE NEED TO FORWARD AUTH REDIRECTS
+
 @Injectable()
 export class StreamableHttpMcpServerService {
   private transports: {
@@ -16,6 +21,15 @@ export class StreamableHttpMcpServerService {
   } = {};
 
   constructor(private readonly deploymentService: DeploymentService) {}
+
+  async getOAuthProvider(req: Request) {
+    return {
+      tokens: () => ({
+        access_token: req.headers.authorization,
+        token_type: "Bearer",
+      }),
+    } as unknown as OAuthClientProvider;
+  }
 
   async handlePostRequest(
     deploymentId: string,
@@ -37,10 +51,24 @@ export class StreamableHttpMcpServerService {
 
     let client: Transport;
 
+    const url = new URL(
+      "http://" + deployment.ipAddress + deployment.transport.endpoint,
+    );
+
+    const authProvider = await this.getOAuthProvider(req);
+
     if (deployment.transport.type === "stdio") {
       client = new StdioClientTransport({
         command: "docker",
         args: ["attach", deployment.containerId],
+      });
+    } else if (deployment.transport.type === "sse") {
+      client = new SSEClientTransport(url, {
+        authProvider,
+      });
+    } else if (deployment.transport.type === "streamable_http") {
+      client = new StreamableHTTPClientTransport(url, {
+        authProvider,
       });
     } else {
       // TODO handle the remaining proxy types
