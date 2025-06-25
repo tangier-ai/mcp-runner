@@ -1,12 +1,58 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 import {
+  IsIn,
   IsNumber,
   IsObject,
   IsOptional,
   IsString,
-  Matches,
+  IsUrl,
   Min,
+  ValidateIf,
+  ValidateNested,
 } from "class-validator";
+
+export class TransportInput {
+  @IsIn(["stdio", "sse", "streamable_http"])
+  @ApiProperty({
+    type: String,
+    enum: ["stdio", "sse", "streamable_http"],
+    example: "streamable_http",
+    description: "Transport type for the deployment communication",
+  })
+  type: "stdio" | "sse" | "streamable_http";
+
+  @ValidateIf((obj) => obj.type === "sse" || obj.type === "streamable_http")
+  @IsUrl()
+  @ApiProperty({
+    type: String,
+    required: false,
+    example: "http://localhost:3000/mcp",
+    description: "Endpoint URL (required for SSE and streamable HTTP)",
+  })
+  endpoint?: string;
+}
+
+export class Transport {
+  @IsIn(["stdio", "sse", "streamable_http"])
+  @ApiProperty({
+    type: String,
+    enum: ["stdio", "sse", "streamable_http"],
+    example: "stdio",
+    description: "Transport type for the deployment communication",
+  })
+  type: "stdio" | "sse" | "streamable_http";
+
+  @ValidateIf((obj) => obj.type === "sse" || obj.type === "streamable_http")
+  @IsUrl()
+  @ApiProperty({
+    type: String,
+    required: false,
+    example: "http://localhost:3000/sse",
+    description: "Endpoint URL (required for SSE and streamable HTTP)",
+  })
+  endpoint?: string;
+}
 
 export class CreateDeploymentBody {
   @IsString({
@@ -17,9 +63,6 @@ export class CreateDeploymentBody {
     required: true,
     example: "mcp/time:latest",
     description: "The Docker image ID to use for the deployment",
-  })
-  @Matches(/^[a-z0-9\/._-]+:[a-z0-9._-]+$/, {
-    message: "Image must contain a tag in the format 'name:tag'",
   })
   image: string;
 
@@ -87,6 +130,23 @@ export class CreateDeploymentBody {
     description: "Optional metadata for the deployment",
   })
   metadata?: Record<string, any>;
+
+  @ValidateNested()
+  @Type(() => TransportInput)
+  @ApiProperty({
+    type: TransportInput,
+    required: true,
+    description: "Transport configuration for the deployment communication",
+    examples: {
+      stdio: { type: "stdio" },
+      sse: { type: "sse", endpoint: "http://localhost:3000/sse" },
+      streamable_http: {
+        type: "streamable_http",
+        endpoint: "http://localhost:3000/mcp",
+      },
+    },
+  })
+  transport: TransportInput;
 }
 
 export class CreateDeploymentOkResponse {
@@ -176,6 +236,9 @@ export class DeploymentInfo {
 
   // Error message from stderr if state is error
   error?: string;
+
+  // Transport configuration for deployment communication
+  transport: Transport;
 }
 
 export class DeploymentListItem {

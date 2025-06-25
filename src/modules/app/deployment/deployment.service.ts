@@ -281,6 +281,7 @@ export class DeploymentService implements OnModuleDestroy {
       maxCpus,
       maxInactivityDeletion = null,
       metadata,
+      transport,
     } = deploymentData;
 
     await this.pullImageIfNeeded(image);
@@ -408,6 +409,7 @@ export class DeploymentService implements OnModuleDestroy {
       lastInteraction: now,
       metadata,
       state: "started",
+      transport,
     };
 
     stderr.on("data", async (chunk) => {
