@@ -5,8 +5,6 @@ import { srcRoot } from "../../srcRoot";
 import { StreamableHttpMcpServerModule } from "../http-streamable/streamable-http-mcp-server.module";
 import { SSEMcpServerModule } from "../sse/sse-mcp-server.module";
 import { AppController } from "./app.controller";
-import { ContainerController } from "./container/container.controller";
-import { ContainerService } from "./container/container.service";
 import { DeploymentController } from "./deployment/deployment.controller";
 import { DeploymentService } from "./deployment/deployment.service";
 import { HealthController } from "./health/health.controller";
@@ -23,12 +21,7 @@ import { HealthController } from "./health/health.controller";
     SSEMcpServerModule,
     StreamableHttpMcpServerModule,
   ],
-  controllers: [
-    AppController,
-    HealthController,
-    ContainerController,
-    DeploymentController,
-  ],
-  providers: [ContainerService, DeploymentService],
+  controllers: [AppController, HealthController, DeploymentController],
+  providers: [DeploymentService],
 })
 export class AppModule {}
