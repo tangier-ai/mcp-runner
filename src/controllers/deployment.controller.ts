@@ -1,6 +1,20 @@
-import { Body, Controller, Delete, Get, NotFoundException, Param, Post } from "@nestjs/common";
-import { ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiParam, ApiTags } from "@nestjs/swagger";
-import { DeploymentService } from "./deployment.service";
+import { DeploymentService } from "@/services/deployment.service";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+} from "@nestjs/common";
+import {
+  ApiBody,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiParam,
+  ApiTags,
+} from "@nestjs/swagger";
 import {
   CreateDeploymentBody,
   CreateDeploymentOkResponse,
@@ -8,7 +22,7 @@ import {
   DeploymentListItem,
   DeploymentResponse,
   NotFoundResponse,
-} from "./deployment.types";
+} from "./deployment.controller.types";
 
 @Controller({
   path: "/api/deployment",
@@ -89,9 +103,11 @@ export class DeploymentController {
     type: NotFoundResponse,
     description: "Deployment not found",
   })
-  async deleteDeployment(@Param("id") id: string): Promise<DeleteDeploymentResponse> {
+  async deleteDeployment(
+    @Param("id") id: string,
+  ): Promise<DeleteDeploymentResponse> {
     const deployment = this.deploymentService.getDeployment(id);
-    
+
     if (!deployment) {
       throw new NotFoundException(`Deployment with ID ${id} not found`);
     }

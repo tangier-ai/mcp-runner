@@ -1,3 +1,4 @@
+import { SSEServerTransportProxy } from "@/mcp-proxy/SSEServerTransportProxy";
 import { OAuthClientProvider } from "@modelcontextprotocol/sdk/client/auth.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
@@ -6,8 +7,7 @@ import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { JSONRPCMessageSchema } from "@modelcontextprotocol/sdk/types.js";
 import { Injectable } from "@nestjs/common";
 import { Request, Response } from "express";
-import { SSEServerTransportProxy } from "../../mcp-proxy/SSEServerTransportProxy";
-import { DeploymentService } from "../deployment/deployment.service";
+import { DeploymentService } from "./deployment.service";
 
 export type TransportProxy = SSEServerTransportProxy;
 

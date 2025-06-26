@@ -1,12 +1,15 @@
+import {
+  CreateDeploymentBody,
+  DeploymentInfo,
+} from "@/controllers/deployment.controller.types";
+import { deploymentStore } from "@/store/deployment.store";
+import { tryCatchPromise } from "@/utils/tryCatchPromise";
 import { Injectable, OnModuleDestroy } from "@nestjs/common";
 import { exec } from "child_process";
 import { randomBytes } from "crypto";
 import Dockerode from "dockerode";
 import { PassThrough } from "stream";
 import { promisify } from "util";
-import { deploymentStore } from "../../store/deployment.store";
-import { tryCatchPromise } from "../../utils/tryCatchPromise";
-import { CreateDeploymentBody, DeploymentInfo } from "./deployment.types";
 
 const execAsync = promisify(exec);
 
@@ -331,7 +334,7 @@ export class DeploymentService implements OnModuleDestroy {
         SecurityOpt: [
           // do not allow privilege escalation
           "no-new-privileges:true",
-          "apparmor:unconfined",
+          "apparmor:docker-default",
           "seccomp:unconfined",
         ],
 
@@ -350,8 +353,10 @@ export class DeploymentService implements OnModuleDestroy {
           "/var/run": "rw,noexec,nosuid,size=100m",
         },
 
-        // Auto-remove container on exit
-        AutoRemove: true,
+        // storage limit
+        StorageOpt: {
+          size: "2GB",
+        },
       },
 
       NetworkingConfig: {

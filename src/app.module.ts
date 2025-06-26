@@ -1,16 +1,16 @@
+import { HealthController } from "@/controllers/health.controller";
+import { SSEMcpServerController } from "@/controllers/sse-mcp-server.controller";
+import { StreamableHttpMcpServerController } from "@/controllers/streamable-http-mcp-server.controller";
+import { DeploymentService } from "@/services/deployment.service";
+import { SSEMcpServerService } from "@/services/sse-mcp-server.service";
+import { StreamableHttpMcpServerService } from "@/services/streamable-http-mcp-server.service";
+import { srcRoot } from "@/srcRoot";
 import { Module } from "@nestjs/common";
 import { ScheduleModule } from "@nestjs/schedule";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { resolve } from "path";
-import { srcRoot } from "../srcRoot";
-import { AppController } from "./app.controller";
-import { DeploymentController } from "./deployment/deployment.controller";
-import { DeploymentService } from "./deployment/deployment.service";
-import { HealthController } from "./health/health.controller";
-import { StreamableHttpMcpServerController } from "./http-streamable/streamable-http-mcp-server.controller";
-import { StreamableHttpMcpServerService } from "./http-streamable/streamable-http-mcp-server.service";
-import { SSEMcpServerController } from "./sse/sse-mcp-server.controller";
-import { SSEMcpServerService } from "./sse/sse-mcp-server.service";
+import { AppController } from "./controllers/app.controller";
+import { DeploymentController } from "./controllers/deployment.controller";
 
 @Module({
   imports: [

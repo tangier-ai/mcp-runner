@@ -1,6 +1,6 @@
+import { SSEMcpServerService } from "@/services/sse-mcp-server.service";
 import { Controller, Get, Param, Post, Req, Res } from "@nestjs/common";
 import { Request, Response } from "express";
-import { SSEMcpServerService } from "./sse-mcp-server.service";
 
 @Controller("/mcp-server/:deployment_id/sse")
 export class SSEMcpServerController {

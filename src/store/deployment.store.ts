@@ -1,3 +1,3 @@
-import { DeploymentInfo } from "../app/deployment/deployment.types";
+import { DeploymentInfo } from "@/controllers/deployment.controller.types";
 
 export const deploymentStore = new Map<string, DeploymentInfo>();

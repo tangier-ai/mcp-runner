@@ -1,3 +1,4 @@
+import { StreamableHTTPServerTransportServerProxy } from "@/mcp-proxy/StreamableHTTPServerTransportServerProxy";
 import { OAuthClientProvider } from "@modelcontextprotocol/sdk/client/auth.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
@@ -7,8 +8,7 @@ import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { Injectable } from "@nestjs/common";
 import { randomBytes } from "crypto";
 import { Request, Response } from "express";
-import { StreamableHTTPServerTransportServerProxy } from "../../mcp-proxy/StreamableHTTPServerTransportServerProxy";
-import { DeploymentService } from "../deployment/deployment.service";
+import { DeploymentService } from "./deployment.service";
 
 export type TransportProxy = StreamableHTTPServerTransportServerProxy;
 
