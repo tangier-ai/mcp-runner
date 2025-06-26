@@ -4,8 +4,8 @@ import { randomBytes } from "crypto";
 import Dockerode from "dockerode";
 import { PassThrough } from "stream";
 import { promisify } from "util";
-import { deploymentStore } from "../../../store/deployment.store";
-import { tryCatchPromise } from "../../../utils/tryCatchPromise";
+import { deploymentStore } from "../../store/deployment.store";
+import { tryCatchPromise } from "../../utils/tryCatchPromise";
 import { CreateDeploymentBody, DeploymentInfo } from "./deployment.types";
 
 const execAsync = promisify(exec);

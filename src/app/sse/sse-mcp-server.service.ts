@@ -7,7 +7,7 @@ import { JSONRPCMessageSchema } from "@modelcontextprotocol/sdk/types.js";
 import { Injectable } from "@nestjs/common";
 import { Request, Response } from "express";
 import { SSEServerTransportProxy } from "../../mcp-proxy/SSEServerTransportProxy";
-import { DeploymentService } from "../app/deployment/deployment.service";
+import { DeploymentService } from "../deployment/deployment.service";
 
 export type TransportProxy = SSEServerTransportProxy;
 

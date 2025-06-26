@@ -8,7 +8,7 @@ import { Injectable } from "@nestjs/common";
 import { randomBytes } from "crypto";
 import { Request, Response } from "express";
 import { StreamableHTTPServerTransportServerProxy } from "../../mcp-proxy/StreamableHTTPServerTransportServerProxy";
-import { DeploymentService } from "../app/deployment/deployment.service";
+import { DeploymentService } from "../deployment/deployment.service";
 
 export type TransportProxy = StreamableHTTPServerTransportServerProxy;
 
