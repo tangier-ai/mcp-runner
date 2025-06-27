@@ -5,5 +5,6 @@ import { srcRoot } from "./src-root";
 
 export const migrateDb = () =>
   migrate(db, {
-    migrationsFolder: resolve(srcRoot, "db", "kit"),
+    // remove dist dir if exists because it is in the src/ directory (migrations are not built by tsc)
+    migrationsFolder: resolve(srcRoot, "../drizzle"),
   });

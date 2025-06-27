@@ -2,7 +2,7 @@ import { sqlitePath } from "@/db/sqlite-path";
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
-  out: "./src/db/kit",
+  out: "./drizzle",
   schema: "./src/db/schema",
   dialect: "sqlite",
   dbCredentials: {
