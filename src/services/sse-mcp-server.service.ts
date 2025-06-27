@@ -1,8 +1,8 @@
-import { SseServerTransportProxy } from "@/mcp-proxy/sse-server-transport-proxy";
+import { SseServerTransportProxy } from "@/mcp-transports/sse-server-transport-proxy";
+import { StdioDockerClient } from "@/mcp-transports/stdio-docker-client";
 import { BaseMcpServerService } from "@/services/base-mcp-server.service";
 import { tryCatchPromise } from "@/utils/try-catch-promise";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { JSONRPCMessageSchema } from "@modelcontextprotocol/sdk/types.js";
@@ -45,10 +45,7 @@ export class SSEMcpServerService {
     const authProvider = await this.baseMcpServerService.getOAuthProvider(req);
 
     if (deployment.transport.type === "stdio") {
-      client = new StdioClientTransport({
-        command: "docker",
-        args: ["attach", deployment.container_id],
-      });
+      client = new StdioDockerClient({ containerId: deployment.container_id });
     } else if (deployment.transport.type === "sse") {
       const url = new URL(deployment.transport.endpoint as string);
       url.hostname = ipAddress;
