@@ -19,7 +19,7 @@ export class LinuxUserService {
     const username = randomBytes(16).toString("hex");
 
     // create the user
-    await execAsync(`sudo useradd -r -s /bin/false -M ${username}`);
+    await execAsync(`useradd -r -s /bin/false -M ${username}`);
 
     // get the uid and gid
     const [userInfo, userInfoError] = await tryCatchPromise(
@@ -39,7 +39,7 @@ export class LinuxUserService {
   }
 
   async deleteUser(username: string): Promise<void> {
-    await execAsync(`sudo userdel ${username}`);
+    await execAsync(`userdel ${username}`);
   }
 
   async userExists(username: string): Promise<boolean> {
