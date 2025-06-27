@@ -171,13 +171,15 @@ export class ContainerService {
       stderr.on("data", async (chunk: any) => {
         const data = chunk.toString();
 
-        await db.transaction(async (txn) => {
-          const dplmt = await txn.query.Deployment.findFirst({
+        db.transaction((txn) => {
+          const dplmt = txn.query.Deployment.findFirst({
             where: (table, { eq }) => eq(table.id, deploymentId),
-          });
+          })
+            .prepare()
+            .get();
 
           if (dplmt) {
-            await txn
+            txn
               .update(DeploymentTable)
               .set({ stderr: dplmt.stderr ? dplmt.stderr + data : data })
               .where(eq(DeploymentTable.id, deploymentId));
