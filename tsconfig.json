@@ -23,5 +23,6 @@
     "noFallthroughCasesInSwitch": false,
     "alwaysStrict": true,
     "resolveJsonModule": true
-  }
+  },
+  "include": ["src/**/*"]
 }
