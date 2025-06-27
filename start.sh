@@ -3,6 +3,7 @@ docker run -d \
   --network=host \
   --name mcp-runner-container \
   --restart=always \
+  -e NODE_ENV=production \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v /etc:/etc \
   -v /var/mcp-runner:/var/mcp-runner \

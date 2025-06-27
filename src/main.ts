@@ -1,3 +1,4 @@
+import { migrateDb } from "@/migrate";
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { ExpressAdapter } from "@nestjs/platform-express";
@@ -5,6 +6,8 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
 
 async function bootstrap() {
+  migrateDb();
+
   const expressAdapter = new ExpressAdapter();
 
   const app = await NestFactory.create(AppModule, expressAdapter);

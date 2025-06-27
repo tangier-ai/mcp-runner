@@ -3,6 +3,7 @@ import { resolve } from "path";
 import { db } from "./db";
 import { srcRoot } from "./src-root";
 
-migrate(db, {
-  migrationsFolder: resolve(srcRoot, "db", "kit"),
-});
+export const migrateDb = () =>
+  migrate(db, {
+    migrationsFolder: resolve(srcRoot, "db", "kit"),
+  });
