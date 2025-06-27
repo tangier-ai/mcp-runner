@@ -1,11 +1,9 @@
-FROM node:24-alpine
+FROM node:24-slim
 
 WORKDIR /app
-RUN apk add --no-cache python3 make gcc g++
-
 
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
 COPY . .
 RUN npm run build
