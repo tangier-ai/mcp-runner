@@ -1,3 +1,4 @@
+import { DeploymentTable } from "@/db/schema/deployment";
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import {
@@ -83,7 +84,7 @@ export class CreateDeploymentBody {
     example: { NODE_ENV: "production", PORT: "3000" },
     description: "Environment variables for the deployment",
   })
-  envVars?: Record<string, string>;
+  env?: Record<string, string>;
 
   @IsOptional()
   @IsNumber()
@@ -119,6 +120,14 @@ export class CreateDeploymentBody {
     nullable: true,
   })
   maxInactivityDeletion?: number | null;
+
+  @ApiProperty({
+    type: Boolean,
+    required: false,
+    default: true,
+    description: "Whether to start the container as soon as it is created",
+  })
+  autoStart?: boolean;
 
   @IsOptional()
   @IsObject()
@@ -199,7 +208,7 @@ export class DeploymentInfo {
   // Environment variables for the container
   @IsOptional()
   @IsObject()
-  envVars?: Record<string, string>;
+  env?: Record<string, string>;
 
   // Maximum memory limit in MB
   @IsOptional()
@@ -262,20 +271,27 @@ export class DeploymentListItem {
   image: string;
 
   @ApiProperty({
+    type: String,
+    required: true,
+    example: "deployment-user",
+    description: "The username of the unprivileged user for this deployment",
+  })
+  uid: number;
+
+  @ApiProperty({
     type: Number,
     required: true,
     example: 1001,
     description: "The GID of the unprivileged user for this deployment",
   })
-  userGid: number;
+  gid: number;
 }
 
 export class DeploymentResponse {
   @ApiProperty({
-    type: DeploymentInfo,
     nullable: true,
   })
-  deployment: DeploymentInfo | null;
+  deployment: typeof DeploymentTable.$inferSelect | null;
 }
 
 export class DeleteDeploymentResponse {

@@ -55,11 +55,13 @@ export class DeploymentController {
     description: "List of all deployments with basic information",
   })
   async listDeployments(): Promise<DeploymentListItem[]> {
-    const deployments = this.deploymentService.getAllDeployments();
+    const deployments = await this.deploymentService.getAllDeployments();
+
     return deployments.map((deployment) => ({
       id: deployment.id,
       image: deployment.image,
-      userGid: deployment.gid,
+      uid: deployment.uid,
+      gid: deployment.gid,
     }));
   }
 
@@ -78,7 +80,7 @@ export class DeploymentController {
     description: "Deployment not found",
   })
   async getDeployment(@Param("id") id: string): Promise<DeploymentResponse> {
-    const deployment = this.deploymentService.getDeployment(id);
+    const deployment = await this.deploymentService.getDeployment(id);
 
     if (!deployment) {
       throw new NotFoundException(`Deployment with ID ${id} not found`);

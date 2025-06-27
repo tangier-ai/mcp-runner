@@ -1,10 +1,14 @@
 import { HealthController } from "@/controllers/health.controller";
 import { SSEMcpServerController } from "@/controllers/sse-mcp-server.controller";
 import { StreamableHttpMcpServerController } from "@/controllers/streamable-http-mcp-server.controller";
+import { BaseMcpServerService } from "@/services/base-mcp-server.service";
+import { ContainerService } from "@/services/container.service";
 import { DeploymentService } from "@/services/deployment.service";
+import { LinuxUserService } from "@/services/linux-user.service";
+import { NetworkService } from "@/services/network.service";
 import { SSEMcpServerService } from "@/services/sse-mcp-server.service";
 import { StreamableHttpMcpServerService } from "@/services/streamable-http-mcp-server.service";
-import { srcRoot } from "@/srcRoot";
+import { srcRoot } from "@/src-root";
 import { Module } from "@nestjs/common";
 import { ScheduleModule } from "@nestjs/schedule";
 import { ServeStaticModule } from "@nestjs/serve-static";
@@ -31,6 +35,10 @@ import { DeploymentController } from "./controllers/deployment.controller";
     StreamableHttpMcpServerController,
   ],
   providers: [
+    BaseMcpServerService,
+    ContainerService,
+    LinuxUserService,
+    NetworkService,
     DeploymentService,
     SSEMcpServerService,
     StreamableHttpMcpServerService,

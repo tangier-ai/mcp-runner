@@ -1,9 +1,10 @@
+import { InMemoryEventStore } from "@/utils/in-memory-event-store";
 import {
   StreamableHTTPServerTransport,
   StreamableHTTPServerTransportOptions,
 } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
-import { InMemoryEventStore } from "../utils/InMemoryEventStore";
+import { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
 
 /*
  * Terminology:
@@ -16,11 +17,13 @@ import { InMemoryEventStore } from "../utils/InMemoryEventStore";
  */
 
 type CloseHandler = () => void;
+type UnsubscribeFn = () => void;
 
 // This is a middle-man that wraps the Underlying MCP Server
 // This will let external clients use Streamable HTTP regardless of what transport the Underlying MCP Server uses.
-export class StreamableHTTPServerTransportServerProxy extends StreamableHTTPServerTransport {
+export class StreamableHttpServerTransportServerProxy extends StreamableHTTPServerTransport {
   onCloseHandlers: Array<CloseHandler> = [];
+  onMessageHandlers: Array<(message: JSONRPCMessage) => void> = [];
 
   // set up listeners in the constructor
   constructor(
@@ -40,6 +43,7 @@ export class StreamableHTTPServerTransportServerProxy extends StreamableHTTPServ
     // when the server receives a message, it forwards it to the actual Underlying MCP Server
     this.onmessage = (message) => {
       client.send(message);
+      this.onMessageHandlers.forEach((handler) => handler(message));
     };
 
     // when the Underlying MCP Server sends a message, forward it out to the External Client
@@ -60,8 +64,23 @@ export class StreamableHTTPServerTransportServerProxy extends StreamableHTTPServ
     };
   }
 
-  addCloseHandler(handler: CloseHandler): void {
+  addOnMessageHandler(
+    handler: (message: JSONRPCMessage) => void,
+  ): UnsubscribeFn {
+    this.onMessageHandlers.push(handler);
+    return () => {
+      this.onMessageHandlers = this.onMessageHandlers.filter(
+        (h) => h !== handler,
+      );
+    };
+  }
+
+  addCloseHandler(handler: CloseHandler): UnsubscribeFn {
     this.onCloseHandlers.push(handler);
+
+    return () => {
+      this.onCloseHandlers = this.onCloseHandlers.filter((h) => h !== handler);
+    };
   }
 
   async start(): Promise<void> {
