@@ -74,4 +74,7 @@ sudo -E bash nodesource_setup.sh > /dev/null
 sudo apt-get install -y nodejs > /dev/null
 rm nodesource_setup.sh
 
+print_with_borders "Create /var/mcp-runner directory for storing db..."
+mdkir -p /var/mcp-runner > /dev/null
+
 print_with_borders "Done!"
