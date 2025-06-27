@@ -129,11 +129,6 @@ export class ContainerService {
           "/var/cache/nginx": "rw,noexec,nosuid,size=100m",
           "/var/run": "rw,noexec,nosuid,size=100m",
         },
-
-        // storage limit
-        StorageOpt: {
-          size: "2GB",
-        },
       },
 
       NetworkingConfig: {
