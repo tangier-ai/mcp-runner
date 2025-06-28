@@ -34,7 +34,7 @@ export class Transport {
   endpoint?: string;
 }
 
-export class DeploymentDTO {
+export class DeploymentData {
   @IsString()
   @ApiProperty({
     type: String,
@@ -328,12 +328,12 @@ export class CreateDeploymentBody {
 
 export class CreateDeploymentOkResponse {
   @ApiProperty({
-    type: String,
+    type: DeploymentData,
     required: true,
     example: "deployment-1234567890abcdef",
     description: "The ID of the created deployment",
   })
-  deployment: DeploymentDTO;
+  deployment: DeploymentData;
 
   @ApiProperty({
     type: String,

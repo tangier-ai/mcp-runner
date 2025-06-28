@@ -20,7 +20,7 @@ import {
   CreateDeploymentBody,
   CreateDeploymentOkResponse,
   DeleteDeploymentResponse,
-  DeploymentDTO,
+  DeploymentData,
   DeploymentResponse,
   NotFoundResponse,
 } from "./deployment.controller.types";
@@ -51,11 +51,11 @@ export class DeploymentController {
 
   @Get("/")
   @ApiOkResponse({
-    type: DeploymentDTO,
+    type: DeploymentData,
     isArray: true,
     description: "List of all deployments with basic information",
   })
-  async listDeployments(): Promise<DeploymentDTO[]> {
+  async listDeployments(): Promise<DeploymentData[]> {
     const deployments = await this.deploymentService.getAllDeployments();
 
     return deployments.map((deployment) => ({
