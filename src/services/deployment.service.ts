@@ -196,6 +196,15 @@ export class DeploymentService {
       throw createError;
     }
 
+    const now = new Date();
+    const pause_at = pauseAfterSeconds
+      ? new Date(now.getTime() + pauseAfterSeconds * 1000)
+      : null;
+
+    const delete_at = deleteAfterSeconds
+      ? new Date(now.getTime() + deleteAfterSeconds * 1000)
+      : null;
+
     let [deployment] = await db
       .insert(DeploymentTable)
       .values({
@@ -216,6 +225,9 @@ export class DeploymentService {
         transport: transport as TransportInfo,
         pause_after_seconds: pauseAfterSeconds,
         delete_after_seconds: deleteAfterSeconds,
+
+        pause_at,
+        delete_at,
       })
       .returning();
 
