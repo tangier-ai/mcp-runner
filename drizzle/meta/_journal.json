@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1750984116130,
-      "tag": "0000_init deployment",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1751074338516,
-      "tag": "0001_add username",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1751085035445,
-      "tag": "0002_add status",
+      "when": 1751140578171,
+      "tag": "0000_init",
       "breakpoints": true
     }
   ]

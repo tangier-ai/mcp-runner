@@ -1,1 +1,0 @@
-ALTER TABLE `Deployment` ADD `status` text NOT NULL;

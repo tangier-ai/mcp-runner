@@ -251,13 +251,40 @@ export class DeploymentService {
   }
 
   async updateLastInteraction(deploymentId: string) {
-    const [deployment] = await db
-      .update(DeploymentTable)
-      .set({
-        last_interaction_at: new Date(),
+    const deployment = db.transaction((txn) => {
+      const existing = txn.query.Deployment.findFirst({
+        where: (table, { eq }) => eq(table.id, deploymentId),
       })
-      .where(eq(DeploymentTable.id, deploymentId))
-      .returning();
+        .prepare()
+        .get();
+
+      if (!existing) {
+        return;
+      }
+
+      const now = new Date();
+
+      const pause_at = existing.pause_after_seconds
+        ? new Date(now.getTime() + existing.pause_after_seconds * 1000)
+        : null;
+
+      const delete_at = existing.delete_after_seconds
+        ? new Date(now.getTime() + existing.delete_after_seconds * 1000)
+        : null;
+
+      const [updated] = txn
+        .update(DeploymentTable)
+        .set({
+          last_interaction_at: now,
+          pause_at,
+          delete_at,
+        })
+        .where(eq(DeploymentTable.id, deploymentId))
+        .returning()
+        .all();
+
+      return updated;
+    });
 
     return deployment;
   }

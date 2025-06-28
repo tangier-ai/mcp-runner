@@ -1,5 +1,5 @@
 import { randomBytes } from "crypto";
-import { SQL, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import {
   index,
   integer,
@@ -61,21 +61,8 @@ export const DeploymentTable = sqliteTable(
     delete_after_seconds: integer(),
 
     // Generated columns
-    pause_at: integer({ mode: "timestamp_ms" }).generatedAlwaysAs(
-      (): SQL => sql`CASE 
-      WHEN ${DeploymentTable.pause_after_seconds} IS NULL THEN NULL 
-      ELSE ${DeploymentTable.last_interaction_at} + (${DeploymentTable.pause_after_seconds} * 1000)
-    END`,
-      { mode: "stored" },
-    ),
-
-    delete_at: integer({ mode: "timestamp_ms" }).generatedAlwaysAs(
-      (): SQL => sql`CASE 
-      WHEN ${DeploymentTable.delete_after_seconds} IS NULL THEN NULL 
-      ELSE ${DeploymentTable.last_interaction_at} + (${DeploymentTable.delete_after_seconds} * 1000)
-    END`,
-      { mode: "stored" },
-    ),
+    pause_at: integer({ mode: "timestamp_ms" }),
+    delete_at: integer({ mode: "timestamp_ms" }),
 
     created_at: integer({ mode: "timestamp_ms" })
       .default(sql`CURRENT_TIMESTAMP`)

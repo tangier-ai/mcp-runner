@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "25f214d8-0c20-40e5-813c-5648a91b0be6",
+  "id": "a9e21c58-5f52-4be3-86b2-88ba0f63f04a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "Deployment": {
@@ -11,6 +11,13 @@
           "name": "id",
           "type": "text",
           "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
@@ -30,6 +37,13 @@
         },
         "image": {
           "name": "image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "username": {
+          "name": "username",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -105,22 +119,14 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
-          "autoincrement": false,
-          "generated": {
-            "as": "(CASE \n      WHEN \"pause_after_seconds\" IS NULL THEN NULL \n      ELSE \"last_interaction_at\" + (\"pause_after_seconds\" * 1000)\n    END)",
-            "type": "stored"
-          }
+          "autoincrement": false
         },
         "delete_at": {
           "name": "delete_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
-          "autoincrement": false,
-          "generated": {
-            "as": "(CASE \n      WHEN \"delete_after_seconds\" IS NULL THEN NULL \n      ELSE \"last_interaction_at\" + (\"delete_after_seconds\" * 1000)\n    END)",
-            "type": "stored"
-          }
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
@@ -142,12 +148,16 @@
       "indexes": {
         "pause_at": {
           "name": "pause_at",
-          "columns": ["pause_at"],
+          "columns": [
+            "pause_at"
+          ],
           "isUnique": false
         },
         "delete_at": {
           "name": "delete_at",
-          "columns": ["delete_at"],
+          "columns": [
+            "delete_at"
+          ],
           "isUnique": false
         }
       },

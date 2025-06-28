@@ -1,1 +1,0 @@
-ALTER TABLE `Deployment` ADD `username` text NOT NULL;
