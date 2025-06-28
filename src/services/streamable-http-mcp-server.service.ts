@@ -7,6 +7,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { Injectable } from "@nestjs/common";
+import { Cron } from "@nestjs/schedule";
 import { randomBytes } from "crypto";
 import { Request, Response } from "express";
 import { DeploymentService } from "./deployment.service";
@@ -20,6 +21,10 @@ export class StreamableHttpMcpServerService {
   private transports: {
     [sessionId: string]: TransportProxy;
   } = {};
+  private session_to_deployment_id: {
+    [sessionId: string]: string;
+  } = {};
+  private connected_sessions = new Set<string>();
 
   constructor(
     private readonly deploymentService: DeploymentService,
@@ -85,13 +90,17 @@ export class StreamableHttpMcpServerService {
       transport = new StreamableHttpServerTransportServerProxy(client, {
         sessionIdGenerator,
         onsessioninitialized: (sessionId: string) => {
+          this.connected_sessions.add(sessionId);
           this.transports[sessionId] = transport;
+          this.session_to_deployment_id[sessionId] = deploymentId;
         },
       });
 
       transport.addCloseHandler(() => {
         if (transport.sessionId) {
           delete this.transports[transport.sessionId];
+          delete this.session_to_deployment_id[transport.sessionId];
+          this.connected_sessions.delete(transport.sessionId);
         }
       });
 
@@ -113,12 +122,32 @@ export class StreamableHttpMcpServerService {
       return;
     }
 
+    res.on("close", () => {
+      if (transport.sessionId) {
+        this.connected_sessions.delete(transport.sessionId);
+      }
+    });
+
     // we do this in case we're behind an NGINX proxy because otherwise buffering prevents streaming from working
     res.setHeader("X-Accel-Buffering", "no");
-    await transport.handleRequest(req, res, req.body);
+    const [, handleRequestError] = await tryCatchPromise(
+      transport.handleRequest(req, res, req.body),
+    );
+
+    if (handleRequestError) {
+      await tryCatchPromise(
+        this.baseMcpServerService.sendErrorResponse(
+          res,
+          handleRequestError.message,
+          -32000,
+        ),
+      );
+      return;
+    }
 
     if (transport.sessionId && !this.transports[transport.sessionId]) {
       this.transports[transport.sessionId] = transport;
+      this.session_to_deployment_id[transport.sessionId] = deploymentId;
     }
   }
 
@@ -141,7 +170,7 @@ export class StreamableHttpMcpServerService {
       return;
     }
 
-    await this.deploymentService.updateLastInteraction(deploymentId);
+    this.deploymentService.updateLastInteraction(deploymentId);
 
     const sessionId = req.headers["mcp-session-id"] as string | undefined;
 
@@ -154,7 +183,56 @@ export class StreamableHttpMcpServerService {
     // we do this in case we're behind an NGINX proxy because otherwise buffering prevents streaming from working
     res.setHeader("X-Accel-Buffering", "no");
 
+    res.on("close", () => {
+      // mark it as no longer connected but do not delete it because the transport can be reused
+      if (transport.sessionId) {
+        this.connected_sessions.delete(transport.sessionId);
+      }
+    });
+
     const transport = this.transports[sessionId];
-    await transport.handleRequest(req, res);
+
+    this.connected_sessions.add(sessionId);
+    const [, handleRequestErr] = await tryCatchPromise(
+      transport.handleRequest(req, res),
+    );
+
+    if (handleRequestErr) {
+      await tryCatchPromise(
+        this.baseMcpServerService.sendErrorResponse(
+          res,
+          handleRequestErr.message,
+          -32000,
+        ),
+      );
+    }
+  }
+
+  sessionActivityUpdateLocked = false;
+
+  // every second, mark the deployments with active sessions as active
+  @Cron("* * * * * *")
+  async markSessionsAsActive(): Promise<void> {
+    if (this.sessionActivityUpdateLocked) {
+      return;
+    }
+
+    this.sessionActivityUpdateLocked = true;
+
+    const connected_sessions = Array.from(this.connected_sessions);
+    const deploymentIds = Array.from(
+      new Set(
+        connected_sessions.map(
+          (session) => this.session_to_deployment_id[session],
+        ),
+      ),
+    );
+
+    for (const deploymentId of deploymentIds) {
+      // don't really care too much if this fails for now
+      this.deploymentService.updateLastInteraction(deploymentId);
+    }
+
+    this.sessionActivityUpdateLocked = false;
   }
 }

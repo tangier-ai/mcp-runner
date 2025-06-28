@@ -121,13 +121,17 @@ export class BaseMcpServerService {
     error: string,
     code: number = -32001,
   ): Promise<void> {
-    res.status(400).json({
-      jsonrpc: "2.0",
-      error: {
-        code,
-        message: error,
-      },
-      id: null,
-    });
+    res.status(400).write(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        error: {
+          code,
+          message: error,
+        },
+        id: null,
+      }),
+    );
+
+    res.end();
   }
 }

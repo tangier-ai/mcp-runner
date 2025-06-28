@@ -7,6 +7,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { JSONRPCMessageSchema } from "@modelcontextprotocol/sdk/types.js";
 import { Injectable } from "@nestjs/common";
+import { Cron } from "@nestjs/schedule";
 import { Request, Response } from "express";
 import { DeploymentService } from "./deployment.service";
 
@@ -15,6 +16,7 @@ export type TransportProxy = SseServerTransportProxy;
 @Injectable()
 export class SSEMcpServerService {
   private transports: { [sessionId: string]: TransportProxy } = {};
+  private session_to_deployment_id: { [sessionId: string]: string } = {};
 
   constructor(
     private readonly deploymentService: DeploymentService,
@@ -73,10 +75,12 @@ export class SSEMcpServerService {
     );
 
     this.transports[transport.sessionId] = transport;
+    this.session_to_deployment_id[transport.sessionId] = deploymentId;
 
     transport.addCloseHandler(() => {
       if (transport.sessionId) {
         delete this.transports[transport.sessionId];
+        delete this.session_to_deployment_id[transport.sessionId];
       }
     });
 
@@ -88,6 +92,7 @@ export class SSEMcpServerService {
     res.setHeader("X-Accel-Buffering", "no");
     res.on("close", () => {
       delete this.transports[transport.sessionId];
+      delete this.session_to_deployment_id[transport.sessionId];
     });
 
     await transport.start();
@@ -135,5 +140,27 @@ export class SSEMcpServerService {
     } else {
       res.status(400).send("No transport found for sessionId");
     }
+  }
+
+  sessionActivityUpdateLocked = false;
+  // every second, mark the deployments with active sessions as active
+  @Cron("* * * * * *")
+  async markSessionsAsActive(): Promise<void> {
+    if (this.sessionActivityUpdateLocked) {
+      return;
+    }
+
+    this.sessionActivityUpdateLocked = true;
+
+    const deploymentIds = Array.from(
+      new Set(Object.values(this.session_to_deployment_id)),
+    );
+
+    for (const deploymentId of deploymentIds) {
+      // don't really care too much if this fails for now
+      this.deploymentService.updateLastInteraction(deploymentId);
+    }
+
+    this.sessionActivityUpdateLocked = false;
   }
 }

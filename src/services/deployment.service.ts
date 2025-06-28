@@ -262,7 +262,7 @@ export class DeploymentService {
     return await db.query.Deployment.findMany();
   }
 
-  async updateLastInteraction(deploymentId: string) {
+  updateLastInteraction(deploymentId: string) {
     const deployment = db.transaction((txn) => {
       const existing = txn.query.Deployment.findFirst({
         where: (table, { eq }) => eq(table.id, deploymentId),
