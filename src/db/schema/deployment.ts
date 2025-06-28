@@ -27,6 +27,8 @@ export const DeploymentTable = sqliteTable(
   {
     id: text().primaryKey().notNull().$default(deploymentIdGenerator),
 
+    status: text({ enum: ["running", "stopped"] }).notNull(),
+
     container_id: text().notNull(),
     network_id: text().notNull(),
     image: text().notNull(),

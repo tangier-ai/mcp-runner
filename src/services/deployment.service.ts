@@ -10,6 +10,8 @@ import { LinuxUserService } from "@/services/linux-user.service";
 import { NetworkService } from "@/services/network.service";
 import { tryCatchPromise } from "@/utils/try-catch-promise";
 import { Injectable } from "@nestjs/common";
+import { Cron } from "@nestjs/schedule";
+import * as Sentry from "@sentry/node";
 import Dockerode from "dockerode";
 import { eq } from "drizzle-orm";
 
@@ -192,12 +194,13 @@ export class DeploymentService {
       throw createError;
     }
 
-    const [deployment] = await db
+    let [deployment] = await db
       .insert(DeploymentTable)
       .values({
         id: deploymentId,
         container_id: container.id,
         network_id: network.id,
+        status: "stopped",
 
         image,
 
@@ -221,6 +224,14 @@ export class DeploymentService {
 
       if (startError) {
         console.warn(startError);
+      } else {
+        const [updated] = await db
+          .update(DeploymentTable)
+          .set({ status: "running" })
+          .where(eq(DeploymentTable.id, deploymentId))
+          .returning();
+
+        deployment = updated;
       }
     }
 
@@ -243,13 +254,14 @@ export class DeploymentService {
       .set({
         last_interaction_at: new Date(),
       })
+      .where(eq(DeploymentTable.id, deploymentId))
       .returning();
 
     return deployment;
   }
 
-  async deleteDeployment(deploymentId: string) {
-    await this.cleanupDeployment(deploymentId, true);
+  async deleteDeployment(deploymentId: string, graceful = true) {
+    await this.cleanupDeployment(deploymentId, graceful);
 
     const [deletedDeployment] = await db
       .delete(DeploymentTable)
@@ -257,5 +269,77 @@ export class DeploymentService {
       .returning();
 
     return deletedDeployment;
+  }
+
+  deletionFails = new Set<string>();
+  deleteScheduleLocked = false;
+  @Cron("* * * * * *")
+  async deleteSchedule() {
+    if (this.deleteScheduleLocked) {
+      return;
+    }
+
+    this.deleteScheduleLocked = true;
+
+    const now = new Date();
+
+    const rows_needing_deletion = await db.query.Deployment.findMany({
+      where: (table, { lte }) => lte(table.delete_at, now),
+    }).catch(() => []);
+
+    for (let i = 0; i < rows_needing_deletion.length; i++) {
+      const d = rows_needing_deletion[i];
+
+      // do not try again if we already failed to delete it
+      if (this.deletionFails.has(d.id)) {
+        continue;
+      }
+
+      await this.deleteDeployment(d.id).catch((er) => {
+        this.deletionFails.add(d.id);
+        console.warn(er);
+        Sentry.captureException(er, { extra: { deployment: d } });
+      });
+    }
+
+    this.deleteScheduleLocked = false;
+  }
+
+  pauseFails = new Set<string>();
+  pauseScheduleLocked = false;
+  @Cron("* * * * * *")
+  async pauseSchedule() {
+    if (this.pauseScheduleLocked) {
+      return;
+    }
+
+    this.pauseScheduleLocked = true;
+    const now = new Date();
+
+    const needs_pausing = await db.query.Deployment.findMany({
+      where: (table, { lte, eq, and }) =>
+        and(eq(table.status, "running"), lte(table.pause_at, now)),
+    });
+
+    for (let i = 0; i < needs_pausing.length; i++) {
+      const d = needs_pausing[i];
+
+      if (this.pauseFails.has(d.id)) {
+        continue;
+      }
+
+      await this.containerService.stopContainer(d.container_id).catch((er) => {
+        Sentry.captureException(er);
+        console.warn(er);
+        this.pauseFails.add(d.id);
+      });
+
+      await db
+        .update(DeploymentTable)
+        .set({ status: "stopped" })
+        .where(eq(DeploymentTable.id, d.id));
+    }
+
+    this.pauseScheduleLocked = false;
   }
 }
