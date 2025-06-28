@@ -1,10 +1,8 @@
 import { tryCatchPromise } from "@/utils/try-catch-promise";
+import { waitForChildProcess } from "@/utils/wait-for-child-process";
 import { Injectable } from "@nestjs/common";
-import { exec } from "child_process";
+import { spawn } from "child_process";
 import { randomBytes } from "crypto";
-import { promisify } from "util";
-
-const execAsync = promisify(exec);
 
 export interface UserInfo {
   username: string;
@@ -19,7 +17,11 @@ export class LinuxUserService {
     const username = randomBytes(16).toString("hex");
 
     // create the user
-    await execAsync(`useradd -r -s /bin/false -M ${username}`);
+    await waitForChildProcess(
+      spawn(`useradd`, ["-r", "-s", "/bin/false", "-M", username], {
+        detached: false,
+      }),
+    );
 
     // get the uid and gid
     const [userInfo, userInfoError] = await tryCatchPromise(
@@ -39,23 +41,17 @@ export class LinuxUserService {
   }
 
   async deleteUser(username: string): Promise<void> {
-    await execAsync(`userdel ${username}`);
-  }
-
-  async userExists(username: string): Promise<boolean> {
-    const [idResult, idError] = await tryCatchPromise(
-      execAsync(`id ${username}`),
+    await waitForChildProcess(
+      spawn("userdel", [username], { detached: false }),
     );
-
-    return !idError && Boolean(idResult);
   }
 
   async getUserInfo(username: string): Promise<UserInfo | null> {
     const [idResult, idError] = await tryCatchPromise(
-      execAsync(`id ${username}`),
+      waitForChildProcess(spawn("id", [username], { detached: false })),
     );
 
-    if (idError || !idResult) {
+    if (idError || !idResult?.stdout) {
       return null;
     }
 
