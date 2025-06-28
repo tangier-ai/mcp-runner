@@ -38,7 +38,10 @@ export const DeploymentTable = sqliteTable(
     max_memory: integer(),
     max_cpus: real(),
 
-    metadata: text({ mode: "json" }).notNull().default({}),
+    metadata: text({ mode: "json" })
+      .notNull()
+      .default({})
+      .$type<Record<string, any>>(),
 
     // we wil update this as it comes in from the process
     stderr: text().notNull().default(""),

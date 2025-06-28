@@ -10,6 +10,7 @@ import {
 } from "@nestjs/common";
 import {
   ApiBody,
+  ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiParam,
@@ -19,7 +20,7 @@ import {
   CreateDeploymentBody,
   CreateDeploymentOkResponse,
   DeleteDeploymentResponse,
-  DeploymentListItem,
+  DeploymentDTO,
   DeploymentResponse,
   NotFoundResponse,
 } from "./deployment.controller.types";
@@ -36,32 +37,33 @@ export class DeploymentController {
     required: true,
     type: CreateDeploymentBody,
   })
-  @ApiOkResponse({
+  @ApiCreatedResponse({
     type: CreateDeploymentOkResponse,
   })
   async createDeployment(@Body() body: CreateDeploymentBody) {
-    const deploymentId = await this.deploymentService.createDeployment(body);
+    const deployment = await this.deploymentService.createDeployment(body);
 
     return {
-      id: deploymentId,
+      deployment,
       message: "Deployment created successfully",
     };
   }
 
   @Get("/")
   @ApiOkResponse({
-    type: DeploymentListItem,
+    type: DeploymentDTO,
     isArray: true,
     description: "List of all deployments with basic information",
   })
-  async listDeployments(): Promise<DeploymentListItem[]> {
+  async listDeployments(): Promise<DeploymentDTO[]> {
     const deployments = await this.deploymentService.getAllDeployments();
 
     return deployments.map((deployment) => ({
-      id: deployment.id,
-      image: deployment.image,
-      uid: deployment.uid,
-      gid: deployment.gid,
+      ...deployment,
+      pause_at: deployment.pause_at?.toISOString() || null,
+      delete_at: deployment.delete_at?.toISOString() || null,
+      created_at: deployment.created_at.toISOString(),
+      last_interaction_at: deployment.last_interaction_at.toISOString(),
     }));
   }
 

@@ -13,26 +13,6 @@ import {
   ValidateNested,
 } from "class-validator";
 
-export class TransportInput {
-  @IsIn(["stdio", "sse", "streamable_http"])
-  @ApiProperty({
-    type: String,
-    enum: ["stdio", "sse", "streamable_http"],
-    example: "streamable_http",
-    description: "Transport type for the deployment communication",
-  })
-  type: "stdio" | "sse" | "streamable_http";
-
-  @ValidateIf((obj) => obj.type === "sse" || obj.type === "streamable_http")
-  @ApiProperty({
-    type: String,
-    required: false,
-    example: "http://localhost:3000/mcp",
-    description: "Endpoint URL (required for SSE and streamable HTTP)",
-  })
-  endpoint?: string;
-}
-
 export class Transport {
   @IsIn(["stdio", "sse", "streamable_http"])
   @ApiProperty({
@@ -54,6 +34,195 @@ export class Transport {
   endpoint?: string;
 }
 
+export class DeploymentDTO {
+  @IsString()
+  @ApiProperty({
+    type: String,
+    required: true,
+    example: "deployment-1234567890abcdef",
+    description: "Unique identifier for the deployment",
+  })
+  id: string;
+
+  @IsString()
+  @ApiProperty({
+    type: String,
+    required: true,
+    example: "container-1234567890abcdef",
+    description: "Container identifier",
+  })
+  container_id: string;
+
+  @IsString()
+  @ApiProperty({
+    type: String,
+    required: true,
+    example: "network-1234567890abcdef",
+    description: "Network identifier",
+  })
+  network_id: string;
+
+  @IsString()
+  @ApiProperty({
+    type: String,
+    required: true,
+    example: "ubuntu:latest",
+    description: "Container image name",
+  })
+  image: string;
+
+  @IsString()
+  @ApiProperty({
+    type: String,
+    required: true,
+    example: "user",
+    description: "Username in the container",
+  })
+  username: string;
+
+  @IsNumber()
+  @ApiProperty({
+    type: Number,
+    required: true,
+    example: 1000,
+    description: "User ID in the container",
+  })
+  uid: number;
+
+  @IsNumber()
+  @ApiProperty({
+    type: Number,
+    required: true,
+    example: 1000,
+    description: "Group ID in the container",
+  })
+  gid: number;
+
+  @IsNumber()
+  @IsOptional()
+  @ApiProperty({
+    type: Number,
+    required: true,
+    nullable: true,
+    example: 512,
+    description: "Maximum memory limit in MB",
+  })
+  max_memory: number | null;
+
+  @IsNumber()
+  @IsOptional()
+  @ApiProperty({
+    type: Number,
+    required: true,
+    nullable: true,
+    example: 1.0,
+    description: "Maximum CPU cores",
+  })
+  max_cpus: number | null;
+
+  @IsObject()
+  @ApiProperty({
+    type: Object,
+    required: true,
+    default: {},
+    description: "Additional metadata for the deployment",
+  })
+  metadata: Record<string, any>;
+
+  @IsString()
+  @ApiProperty({
+    type: String,
+    required: true,
+    default: "",
+    description: "Standard error output from the container",
+  })
+  stderr: string;
+
+  @ValidateNested()
+  @ApiProperty({
+    type: Transport,
+    required: true,
+    description: "Transport configuration for the deployment",
+  })
+  transport: Transport;
+
+  @IsNumber()
+  @IsOptional()
+  @ApiProperty({
+    type: Number,
+    required: true,
+    example: 300,
+    nullable: true,
+    description: "Seconds of inactivity before container is paused",
+  })
+  pause_after_seconds: number | null;
+
+  @IsNumber()
+  @IsOptional()
+  @ApiProperty({
+    type: Number,
+    required: false,
+    example: 3600,
+    nullable: true,
+    description: "Seconds of inactivity before deployment is deleted",
+  })
+  delete_after_seconds: number | null;
+
+  @IsNumber()
+  @ApiProperty({
+    type: String,
+    required: true,
+    nullable: true,
+    description: "Timestamp when the deployment will be paused",
+  })
+  pause_at: string | null;
+
+  @IsNumber()
+  @ApiProperty({
+    type: String,
+    required: true,
+    nullable: true,
+    description: "Timestamp when the deployment will be deleted",
+  })
+  delete_at: string | null;
+
+  @IsNumber()
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Timestamp when the deployment was created",
+  })
+  created_at: string;
+
+  @IsNumber()
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Timestamp of last interaction with the deployment",
+  })
+  last_interaction_at: string;
+}
+
+export class TransportInput {
+  @IsIn(["stdio", "sse", "streamable_http"])
+  @ApiProperty({
+    type: String,
+    enum: ["stdio", "sse", "streamable_http"],
+    example: "streamable_http",
+    description: "Transport type for the deployment communication",
+  })
+  type: "stdio" | "sse" | "streamable_http";
+
+  @ValidateIf((obj) => obj.type === "sse" || obj.type === "streamable_http")
+  @ApiProperty({
+    type: String,
+    required: false,
+    example: "http://localhost:3000/mcp",
+    description: "Endpoint URL (required for SSE and streamable HTTP)",
+  })
+  endpoint?: string;
+}
+
 export class CreateDeploymentBody {
   @IsString({
     message: "Image ID must be a string",
@@ -61,7 +230,7 @@ export class CreateDeploymentBody {
   @ApiProperty({
     type: String,
     required: true,
-    example: "mcp/time:latest",
+    example: "tzolov/mcp-everything-server:v2",
     description: "The Docker image ID to use for the deployment",
   })
   image: string;
@@ -71,7 +240,7 @@ export class CreateDeploymentBody {
   @ApiProperty({
     type: [String],
     required: false,
-    example: ["--verbose", "--config=/app/config.json"],
+    example: ["--verbose"],
     description: "Command line arguments for the deployment",
   })
   args?: string[];
@@ -164,7 +333,7 @@ export class CreateDeploymentOkResponse {
     example: "deployment-1234567890abcdef",
     description: "The ID of the created deployment",
   })
-  id: string;
+  deployment: DeploymentDTO;
 
   @ApiProperty({
     type: String,
@@ -173,84 +342,6 @@ export class CreateDeploymentOkResponse {
     description: "A message indicating the result of the operation",
   })
   message: string;
-}
-
-export class DeploymentInfo {
-  // Unique deployment identifier
-  @IsString()
-  id: string;
-
-  // Docker container ID
-  @IsString()
-  containerId: string;
-
-  // Docker image ID used for the deployment
-  @IsString()
-  image: string;
-
-  // Username of the unprivileged user created for this deployment
-  @IsString()
-  username: string;
-
-  // User ID of the unprivileged user
-  @IsNumber()
-  uid: number;
-
-  // Group ID of the unprivileged user
-  @IsNumber()
-  gid: number;
-
-  // Command line arguments passed to the container
-  @IsOptional()
-  @IsString({ each: true })
-  args?: string[];
-
-  // Environment variables for the container
-  @IsOptional()
-  @IsObject()
-  env?: Record<string, string>;
-
-  // Maximum memory limit in MB
-  @IsOptional()
-  @IsNumber()
-  @Min(1)
-  maxMemory?: number;
-
-  // the ip address of the network interface for this deployment
-  @IsString()
-  ipAddress: string;
-
-  // Maximum CPU cores limit
-  @IsOptional()
-  @IsNumber()
-  @Min(0.1)
-  maxCpus?: number;
-
-  // Auto-deletion timeout in milliseconds after last interaction
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  maxInactivityDeletion?: number | null;
-
-  // Timestamp when the deployment was created
-  createdAt: Date;
-
-  // Timestamp of the last interaction with the deployment
-  lastInteraction: Date;
-
-  // Optional metadata for the deployment
-  @IsOptional()
-  @IsObject()
-  metadata?: Record<string, any>;
-
-  // Deployment state
-  state: "started" | "error" | "removed";
-
-  // Error message from stderr if state is error
-  error?: string;
-
-  // Transport configuration for deployment communication
-  transport: Transport;
 }
 
 export class DeploymentListItem {
