@@ -8,14 +8,13 @@ import {
 import { ContainerService } from "@/services/container.service";
 import { LinuxUserService } from "@/services/linux-user.service";
 import { NetworkService } from "@/services/network.service";
-import { deploymentStore } from "@/store/deployment.store";
 import { tryCatchPromise } from "@/utils/try-catch-promise";
-import { Injectable, OnModuleDestroy } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import Dockerode from "dockerode";
 import { eq } from "drizzle-orm";
 
 @Injectable()
-export class DeploymentService implements OnModuleDestroy {
+export class DeploymentService {
   public readonly docker: Dockerode;
   private isShuttingDown = false;
 
@@ -46,16 +45,12 @@ export class DeploymentService implements OnModuleDestroy {
     process.on("SIGHUP", () => gracefulShutdown("SIGHUP"));
   }
 
-  async onModuleDestroy() {
-    await this.cleanupAllDeployments(true);
-  }
-
   private async cleanupAllDeployments(graceful: boolean) {
-    const deploymentIds = Array.from(deploymentStore.keys());
+    const deployments = await this.getAllDeployments();
 
     await Promise.all(
-      deploymentIds.map((deploymentId) =>
-        this.cleanupDeployment(deploymentId, graceful),
+      deployments.map((deployment) =>
+        this.cleanupDeployment(deployment.id, graceful),
       ),
     );
   }
@@ -66,10 +61,13 @@ export class DeploymentService implements OnModuleDestroy {
       (error.statusCode === 304 || error.statusCode === 404);
 
     try {
-      const deployment = deploymentStore.get(deploymentId);
+      const deployment = await this.getDeployment(deploymentId);
       if (deployment) {
         const [, stopError] = await tryCatchPromise(
-          this.containerService.stopContainer(deployment.containerId, graceful),
+          this.containerService.stopContainer(
+            deployment.container_id,
+            graceful,
+          ),
         );
 
         if (stopError && !canIgnoreError(stopError)) {
@@ -77,7 +75,7 @@ export class DeploymentService implements OnModuleDestroy {
         }
 
         const [, removalError] = await tryCatchPromise(
-          this.containerService.removeContainer(deployment.containerId),
+          this.containerService.removeContainer(deployment.container_id),
         );
 
         if (removalError && !canIgnoreError(removalError)) {
@@ -105,8 +103,6 @@ export class DeploymentService implements OnModuleDestroy {
             userDeleteError,
           );
         }
-
-        deploymentStore.delete(deploymentId);
       }
     } catch (error) {
       console.error(`Error cleaning up deployment ${deploymentId}:`, error);
@@ -207,6 +203,7 @@ export class DeploymentService implements OnModuleDestroy {
 
         uid: userInfo.uid,
         gid: userInfo.gid,
+        username: userInfo.username,
 
         max_memory: maxMemory,
         max_cpus: maxCpus,

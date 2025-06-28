@@ -31,6 +31,7 @@ export const DeploymentTable = sqliteTable(
     network_id: text().notNull(),
     image: text().notNull(),
 
+    username: text().notNull(),
     uid: integer().notNull(),
     gid: integer().notNull(),
 

@@ -8,6 +8,13 @@
       "when": 1750984116130,
       "tag": "0000_init deployment",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1751074338516,
+      "tag": "0001_add username",
+      "breakpoints": true
     }
   ]
 }
