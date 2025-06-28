@@ -149,16 +149,12 @@
       "indexes": {
         "pause_at": {
           "name": "pause_at",
-          "columns": [
-            "pause_at"
-          ],
+          "columns": ["pause_at"],
           "isUnique": false
         },
         "delete_at": {
           "name": "delete_at",
-          "columns": [
-            "delete_at"
-          ],
+          "columns": ["delete_at"],
           "isUnique": false
         }
       },
