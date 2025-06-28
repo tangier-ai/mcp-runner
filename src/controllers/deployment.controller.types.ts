@@ -279,16 +279,26 @@ export class CreateDeploymentBody {
 
   @IsOptional()
   @IsNumber()
-  @Min(0)
+  @Min(30)
   @ApiProperty({
     type: Number,
     required: false,
-    example: 3600000,
-    description:
-      "Maximum inactivity time in milliseconds before auto-deletion (null for no auto-deletion)",
-    nullable: true,
+    example: 3600,
+    description: "Seconds of inactivity before the deployment is stopped",
   })
-  maxInactivityDeletion?: number | null;
+  pauseAfterSeconds?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(30)
+  @ValidateIf((o) => o.pauseAfterSeconds !== undefined)
+  @ApiProperty({
+    type: Number,
+    required: false,
+    example: 86400,
+    description: "Seconds of inactivity before the deployment is deleted. ",
+  })
+  deleteAfterSeconds?: number;
 
   @ApiProperty({
     type: Boolean,

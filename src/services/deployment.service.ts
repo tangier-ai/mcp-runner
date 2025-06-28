@@ -147,6 +147,8 @@ export class DeploymentService {
       maxCpus,
       metadata,
       transport,
+      pauseAfterSeconds,
+      deleteAfterSeconds,
       autoStart = true,
     } = opts;
 
@@ -212,8 +214,8 @@ export class DeploymentService {
         max_cpus: maxCpus,
         metadata,
         transport: transport as TransportInfo,
-        pause_after_seconds: null,
-        delete_after_seconds: null,
+        pause_after_seconds: pauseAfterSeconds,
+        delete_after_seconds: deleteAfterSeconds,
       })
       .returning();
 
