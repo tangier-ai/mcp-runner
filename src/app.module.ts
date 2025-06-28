@@ -10,14 +10,17 @@ import { SSEMcpServerService } from "@/services/sse-mcp-server.service";
 import { StreamableHttpMcpServerService } from "@/services/streamable-http-mcp-server.service";
 import { srcRoot } from "@/src-root";
 import { Module } from "@nestjs/common";
+import { APP_FILTER } from "@nestjs/core";
 import { ScheduleModule } from "@nestjs/schedule";
 import { ServeStaticModule } from "@nestjs/serve-static";
+import { SentryGlobalFilter, SentryModule } from "@sentry/nestjs/setup";
 import { resolve } from "path";
 import { AppController } from "./controllers/app.controller";
 import { DeploymentController } from "./controllers/deployment.controller";
 
 @Module({
   imports: [
+    SentryModule.forRoot(),
     ScheduleModule.forRoot(),
     ServeStaticModule.forRoot({
       rootPath: resolve(srcRoot, "../", "public").replace("/dist", ""),
@@ -35,6 +38,11 @@ import { DeploymentController } from "./controllers/deployment.controller";
     StreamableHttpMcpServerController,
   ],
   providers: [
+    {
+      provide: APP_FILTER,
+      useClass: SentryGlobalFilter,
+    },
+
     BaseMcpServerService,
     ContainerService,
     LinuxUserService,

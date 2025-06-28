@@ -25,7 +25,7 @@
   "homepage": "https://github.com/tangier-ai/mcp-runner#readme",
   "private": false,
   "scripts": {
-    "build": "nest build",
+    "build": "nest build && [ -n \"$SENTRY_PROJECT\" ] && [ -n \"$SENTRY_ORG\" ] && npm run sentry:sourcemaps",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -36,7 +36,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org $SENTRY_ORG --project $SENTRY_PROJECT ./dist && sentry-cli sourcemaps upload --org $SENTRY_ORG --project $SENTRY_PROJECT ./dist"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.13.0",
@@ -46,6 +47,8 @@
     "@nestjs/schedule": "^6.0.0",
     "@nestjs/serve-static": "^5.0.3",
     "@nestjs/swagger": "^11.2.0",
+    "@sentry/cli": "^2.46.0",
+    "@sentry/nestjs": "^9.33.0",
     "@types/dockerode": "^3.3.41",
     "better-sqlite3": "^12.1.1",
     "class-transformer": "^0.5.1",

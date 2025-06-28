@@ -1,3 +1,5 @@
+import "./instrument";
+
 import { migrateDb } from "@/migrate";
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
