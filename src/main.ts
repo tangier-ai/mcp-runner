@@ -41,7 +41,12 @@ async function bootstrap() {
     swaggerOptions: {},
   });
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(
+    process.env.PORT ?? 3000,
+
+    // by default do not bind to external interface
+    process.env.BIND_IP || "127.0.0.1",
+  );
 }
 bootstrap().then(() => {
   if (!process.env.API_KEY) {
