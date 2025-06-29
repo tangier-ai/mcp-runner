@@ -51,8 +51,8 @@ echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
   $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt-get update > /dev/null
-sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin > /dev/null
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 
 # install gVisor runtime (from: https://gvisor.dev/docs/user_guide/install/#install-from-an-apt-repository)
@@ -61,11 +61,27 @@ sudo apt-get install -y apt-transport-https gnupg > /dev/null
 curl -fsSL https://gvisor.dev/archive.key | sudo gpg --dearmor -o /usr/share/keyrings/gvisor-archive-keyring.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/gvisor-archive-keyring.gpg] https://storage.googleapis.com/gvisor/releases release main" | sudo tee /etc/apt/sources.list.d/gvisor.list > /dev/null
 sudo apt-get update > /dev/null
-sudo apt-get install -y runsc > /dev/null
+sudo apt-get install -y runsc
 sudo runsc install > /dev/null
+
+# configure Docker daemon with gVisor runtime and DNS settings
+print_with_borders "Configuring Docker daemon..."
+sudo tee /etc/docker/daemon.json > /dev/null << 'EOF'
+{
+    "runtimes": {
+        "runsc": {
+            "path": "/usr/bin/runsc",
+            "runtimeArgs": [
+                "--network=host"
+            ]
+        }
+    },
+    "dns": ["8.8.8.8", "1.1.1.1"],
+    "dns-opts": ["ndots:0"]
+}
+EOF
+
 sudo systemctl restart docker
-
-
 
 # install node v24 (from: https://github.com/nodesource/distributions)
 print_with_borders "Installing NodeJS 24..."
