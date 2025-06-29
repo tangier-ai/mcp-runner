@@ -17,6 +17,7 @@ permissions:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    environment: release
     
     steps:
     - name: Checkout repository
