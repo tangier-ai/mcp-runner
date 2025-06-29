@@ -31,10 +31,10 @@ export class LinuxUserService {
     // if we can't parse the uid and gid, cleanup and delete the user before throwing
     if (userInfoError || !userInfo) {
       await this.deleteUser(username).catch(() =>
-        console.warn(`unable to delete user: ${username}`),
+        console.error(`unable to delete user: ${username}`),
       );
 
-      throw new Error(`Failed to get user info for ${username}`);
+      throw new Error(`Failed to get user info`);
     }
 
     return userInfo;

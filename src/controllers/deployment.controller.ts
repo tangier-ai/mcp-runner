@@ -90,7 +90,7 @@ export class DeploymentController {
     const deployment = await this.deploymentService.getDeployment(id);
 
     if (!deployment) {
-      throw new NotFoundException(`Deployment with ID ${id} not found`);
+      throw new NotFoundException(`Deployment not found`);
     }
 
     return {
@@ -118,7 +118,7 @@ export class DeploymentController {
     const deployment = await this.deploymentService.getDeployment(id);
 
     if (!deployment) {
-      throw new NotFoundException(`Deployment with ID ${id} not found`);
+      throw new NotFoundException(`Deployment not found`);
     }
 
     await this.deploymentService.deleteDeployment(id);

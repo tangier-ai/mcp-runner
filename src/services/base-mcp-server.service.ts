@@ -29,7 +29,9 @@ export class BaseMcpServerService {
     const deployment = await this.deploymentService.getDeployment(deploymentId);
 
     if (!deployment) {
-      throw new Error(`Deployment with ID ${deploymentId} not found`);
+      console.error(`Deployment with ID ${deploymentId} not found`);
+
+      throw new Error(`MCP server not running`);
     }
 
     await this.inspectAndEnsureContainerRunning(
@@ -43,9 +45,11 @@ export class BaseMcpServerService {
     );
 
     if (!ipAddress) {
-      throw new Error(
+      console.error(
         `Could not retrieve network for deployment ${deploymentId}`,
       );
+
+      throw new Error(`Could not connect to MCP server`);
     }
 
     return { ipAddress, deployment };
@@ -63,7 +67,9 @@ export class BaseMcpServerService {
 
     if (containerInspectError || !containerInspectData) {
       await this.deploymentService.deleteDeployment(deploymentId);
-      throw new Error(`Container with ID ${containerId} not found`);
+      console.error(`Container with ID ${containerId} not found`);
+
+      throw new Error(`MCP server not running`);
     }
 
     let status = containerInspectData.State.Status as DockerContainerStatus;
@@ -76,9 +82,11 @@ export class BaseMcpServerService {
       );
 
       if (!updatedInspect) {
-        throw new Error(
+        console.error(
           `Container with ID ${containerId} not found after starting`,
         );
+
+        throw new Error(`MCP server not running`);
       }
 
       containerInspectData = updatedInspect;
@@ -86,9 +94,11 @@ export class BaseMcpServerService {
     }
 
     if (status !== "running") {
-      throw new Error(
+      console.error(
         `Container with ID ${containerId} is not running, current status: ${status}`,
       );
+
+      throw new Error(`MCP server not running`);
     }
 
     return containerInspectData;

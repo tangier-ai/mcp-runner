@@ -167,9 +167,11 @@ export class DeploymentService {
         cleanupNetwork: false,
       });
 
-      throw new Error(
+      console.error(
         `Failed to create isolated network for deployment ${deploymentId}: ${networkCreationError.message}`,
       );
+
+      throw new Error(`Failed to create network for deployment`);
     }
 
     const networkName = this.networkService.getNetworkName(deploymentId);

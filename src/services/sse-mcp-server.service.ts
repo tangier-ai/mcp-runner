@@ -105,11 +105,13 @@ export class SSEMcpServerService {
   ): Promise<void> {
     const deployment = this.deploymentService.getDeployment(deploymentId);
     if (!deployment) {
+      console.error(`Deployment with ID ${deploymentId} not found`);
+
       res.status(404).json({
         jsonrpc: "2.0",
         error: {
           code: -32001,
-          message: `Deployment with ID ${deploymentId} not found`,
+          message: `MCP server not running`,
         },
         id: null,
       });
