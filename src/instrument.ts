@@ -1,4 +1,3 @@
-// Import with `const Sentry = require("@sentry/nestjs");` if you are using CJS
 import * as Sentry from "@sentry/nestjs";
 
 const cleanBody = (body: Record<string, any>) => {
