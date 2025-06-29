@@ -85,11 +85,13 @@ The service will start on `localhost:3000` by default.
 
 ### Environment Variables
 
-- `PORT`: Server port (default: 3000)
-- `BIND_IP`: Interface to bind to (default: 127.0.0.1, use 0.0.0.0 for public access)
-- `API_KEY`: Authentication key (auto-generated if not provided)
-- `SENTRY_DSN`: Sentry error reporting endpoint (optional)
-- `NODE_ENV`: Environment mode (production/development)
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `PORT` | Server port | 3000 | No |
+| `BIND_IP` | Interface to bind to (use 0.0.0.0 for public access) | 127.0.0.1 | No |
+| `API_KEY` | Authentication key | Auto-generated | No |
+| `SENTRY_DSN` | Sentry error reporting endpoint | - | No |
+| `NODE_ENV` | Environment mode (production/development) | - | No |
 
 If no `API_KEY` is provided, one will be auto-generated and logged to the console.
 
