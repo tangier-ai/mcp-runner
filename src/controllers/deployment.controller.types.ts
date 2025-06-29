@@ -39,7 +39,7 @@ export class DeploymentData {
   @ApiProperty({
     type: String,
     required: true,
-    example: "deployment-1234567890abcdef",
+    example: "dp_1234567890abcdef",
     description: "Unique identifier for the deployment",
   })
   id: string;
@@ -240,7 +240,8 @@ export class CreateDeploymentBody {
   @ApiProperty({
     type: [String],
     required: false,
-    example: [],
+    example: ["--verbose"],
+    default: null,
     description: "Command line arguments for the deployment",
   })
   args?: string[];
@@ -284,6 +285,7 @@ export class CreateDeploymentBody {
     type: Number,
     required: false,
     example: 3600,
+    default: null,
     description: "Seconds of inactivity before the deployment is stopped",
   })
   pauseAfterSeconds?: number;
@@ -296,6 +298,7 @@ export class CreateDeploymentBody {
     type: Number,
     required: false,
     example: 86400,
+    default: null,
     description: "Seconds of inactivity before the deployment is deleted. ",
   })
   deleteAfterSeconds?: number;
@@ -340,7 +343,6 @@ export class CreateDeploymentOkResponse {
   @ApiProperty({
     type: DeploymentData,
     required: true,
-    example: "deployment-1234567890abcdef",
     description: "The ID of the created deployment",
   })
   deployment: DeploymentData;

@@ -1,5 +1,3 @@
-# Tangier Secure MCP Runner
-
 A secure, isolated platform for running MCP (Model Context Protocol) servers in Docker containers with GVisor runtime. Built with NestJS and TypeScript, this service provides ephemeral, multi-tenant deployments of MCP servers with robust security isolation.
 
 ## Motivation
