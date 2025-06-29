@@ -240,7 +240,7 @@ export class CreateDeploymentBody {
   @ApiProperty({
     type: [String],
     required: false,
-    example: ["--verbose"],
+    example: [],
     description: "Command line arguments for the deployment",
   })
   args?: string[];
