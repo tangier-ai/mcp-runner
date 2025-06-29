@@ -51,3 +51,15 @@ samp {
 .version-stamp {
   background: rgb(255, 99, 72) !important;
 }
+
+.swagger-ui .auth-btn-wrapper {
+  flex-direction: row;
+  gap: 12px;
+  justify-content: flex-start !important;
+}
+
+.scheme-container {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}

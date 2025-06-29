@@ -1,3 +1,4 @@
+import { ApiKeyGuard } from "@/guards/api-key.guard";
 import { DeploymentService } from "@/services/deployment.service";
 import {
   Body,
@@ -7,6 +8,7 @@ import {
   NotFoundException,
   Param,
   Post,
+  UseGuards,
 } from "@nestjs/common";
 import {
   ApiBody,
@@ -14,6 +16,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiParam,
+  ApiSecurity,
   ApiTags,
 } from "@nestjs/swagger";
 import {
@@ -29,6 +32,8 @@ import {
   path: "/api/deployment",
 })
 @ApiTags("Deployment")
+@ApiSecurity("api-key")
+@UseGuards(ApiKeyGuard)
 export class DeploymentController {
   constructor(private readonly deploymentService: DeploymentService) {}
 
@@ -110,7 +115,7 @@ export class DeploymentController {
   async deleteDeployment(
     @Param("id") id: string,
   ): Promise<DeleteDeploymentResponse> {
-    const deployment = this.deploymentService.getDeployment(id);
+    const deployment = await this.deploymentService.getDeployment(id);
 
     if (!deployment) {
       throw new NotFoundException(`Deployment with ID ${id} not found`);

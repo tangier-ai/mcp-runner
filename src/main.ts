@@ -1,5 +1,6 @@
 import "./instrument";
 
+import { API_KEY } from "@/api-key";
 import { migrateDb } from "@/migrate";
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
@@ -19,6 +20,15 @@ async function bootstrap() {
     .setTitle("Tangier MCP Runner API")
     .setDescription("The API for controlling the Tangier MCP Runner")
     .setVersion("0.0.1")
+    .addApiKey(
+      {
+        type: "apiKey",
+        name: "X-API-Key",
+        in: "header",
+        description: "API key for runner authentication",
+      },
+      "api-key",
+    )
     .build();
 
   const documentFactory = () => SwaggerModule.createDocument(app, config);
@@ -33,4 +43,11 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3000);
 }
-bootstrap();
+bootstrap().then(() => {
+  if (!process.env.API_KEY) {
+    console.warn(
+      "No API_KEY environment variable provided. One was generated for you: " +
+        API_KEY,
+    );
+  }
+});

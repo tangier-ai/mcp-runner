@@ -252,8 +252,8 @@ export class DeploymentService {
     return deployment;
   }
 
-  async getDeployment(deploymentId: string) {
-    return await db.query.Deployment.findFirst({
+  getDeployment(deploymentId: string) {
+    return db.query.Deployment.findFirst({
       where: (table, { eq }) => eq(table.id, deploymentId),
     });
   }

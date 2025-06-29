@@ -9,7 +9,7 @@ import {
 } from "drizzle-orm/sqlite-core";
 
 export const deploymentIdGenerator = () =>
-  `dp_${randomBytes(16).toString("base64url")}`;
+  `dp_${randomBytes(64).toString("base64url")}`;
 
 export type StdioTransportInfo = {
   type: "stdio";
