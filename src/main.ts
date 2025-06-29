@@ -2,10 +2,13 @@ import "./instrument";
 
 import { API_KEY } from "@/api-key";
 import { migrateDb } from "@/migrate";
+import { srcRoot } from "@/src-root";
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { ExpressAdapter } from "@nestjs/platform-express";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { readFileSync } from "fs";
+import { resolve } from "path";
 import { AppModule } from "./app.module";
 
 async function bootstrap() {
@@ -18,7 +21,11 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle("Tangier MCP Runner API")
-    .setDescription("The API for controlling the Tangier MCP Runner")
+    .setDescription(
+      readFileSync(
+        resolve(srcRoot, "../", "README.md").replace("/dist", ""),
+      ).toString("utf-8"),
+    )
     .setVersion("0.0.1")
     .addApiKey(
       {
@@ -33,11 +40,12 @@ async function bootstrap() {
 
   const documentFactory = () => SwaggerModule.createDocument(app, config);
 
-  SwaggerModule.setup("/api", app, documentFactory, {
+  SwaggerModule.setup("/swagger", app, documentFactory, {
     ui: true,
     customSiteTitle: "Tangier MCP Runner API",
     customfavIcon: "/icon.svg",
     customCssUrl: "/swagger.css",
+    yamlDocumentUrl: "/openapi.yaml",
     swaggerOptions: {},
   });
 

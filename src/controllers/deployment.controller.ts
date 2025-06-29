@@ -15,6 +15,7 @@ import {
   ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
+  ApiOperation,
   ApiParam,
   ApiSecurity,
   ApiTags,
@@ -45,6 +46,11 @@ export class DeploymentController {
   @ApiCreatedResponse({
     type: CreateDeploymentOkResponse,
   })
+  @ApiOperation({
+    operationId: "createDeployment",
+    summary: "Create a new deployment",
+    description: "Creates a new deployment with the specified configuration.",
+  })
   async createDeployment(@Body() body: CreateDeploymentBody) {
     const deployment = await this.deploymentService.createDeployment(body);
 
@@ -55,6 +61,11 @@ export class DeploymentController {
   }
 
   @Get("/")
+  @ApiOperation({
+    operationId: "listDeployments",
+    summary: "List all deployments",
+    description: "Retrieves a list of all deployments with their basic information and status.",
+  })
   @ApiOkResponse({
     type: DeploymentData,
     isArray: true,
@@ -73,6 +84,11 @@ export class DeploymentController {
   }
 
   @Get("/:id")
+  @ApiOperation({
+    operationId: "getDeployment",
+    summary: "Get deployment details",
+    description: "Retrieves detailed information about a specific deployment by its ID.",
+  })
   @ApiParam({
     name: "id",
     type: String,
@@ -99,6 +115,11 @@ export class DeploymentController {
   }
 
   @Delete("/:id")
+  @ApiOperation({
+    operationId: "deleteDeployment",
+    summary: "Delete a deployment",
+    description: "Deletes a deployment and cleans up all associated resources including containers, networks, and user accounts.",
+  })
   @ApiParam({
     name: "id",
     type: String,
