@@ -6,6 +6,7 @@ import { ContainerService } from "@/services/container.service";
 import { DeploymentService } from "@/services/deployment.service";
 import { LinuxUserService } from "@/services/linux-user.service";
 import { NetworkService } from "@/services/network.service";
+import { RateLimiterService } from "@/services/rate-limiter.service";
 import { SSEMcpServerService } from "@/services/sse-mcp-server.service";
 import { StreamableHttpMcpServerService } from "@/services/streamable-http-mcp-server.service";
 import { srcRoot } from "@/src-root";
@@ -47,6 +48,7 @@ import { DeploymentController } from "./controllers/deployment.controller";
     ContainerService,
     LinuxUserService,
     NetworkService,
+    RateLimiterService,
     DeploymentService,
     SSEMcpServerService,
     StreamableHttpMcpServerService,
