@@ -1,6 +1,6 @@
 {
   "name": "@tangier-ai/mcp-runner",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Dockerized API for running and connecting to MCP servers securely and remotely built in TypeScript",
   "main": "src/app.ts",
   "repository": {

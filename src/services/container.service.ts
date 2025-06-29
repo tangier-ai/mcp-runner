@@ -88,13 +88,13 @@ export class ContainerService {
       maxCpus,
     } = options;
 
-    const envArray = Object.entries(env).map(
-      ([key, value]) => `${key}=${value}`,
-    );
+    const envArray = env
+      ? Object.entries(env).map(([key, value]) => `${key}=${value}`)
+      : [];
 
     const containerOptions: Dockerode.ContainerCreateOptions = {
       Image: image,
-      Cmd: args.length > 0 ? args : undefined,
+      Cmd: args?.length > 0 ? args : undefined,
       Env: envArray.length > 0 ? envArray : undefined,
       OpenStdin: true,
       User: `${uid}:${gid}`,
