@@ -57,8 +57,20 @@ Security is enforced through multiple layers:
 Create a new Ubuntu 24.04 VM (minimum 2GB RAM recommended) and run:
 
 ```bash
-source setup.sh
+# Download and run the setup script
+wget https://raw.githubusercontent.com/tangier-ai/mcp-runner/refs/heads/main/setup.sh
+sudo bash setup.sh
 ```
+
+Or using curl:
+
+```bash
+# Download and run the setup script
+curl -O https://raw.githubusercontent.com/tangier-ai/mcp-runner/refs/heads/main/setup.sh
+sudo bash setup.sh
+```
+
+This setup script is the [setup.sh](./setup.sh) file in this repository.
 
 ### Running the Service
 
@@ -80,6 +92,15 @@ docker run -d \
 ```
 
 The service will start on `localhost:3000` by default.
+
+### Docker Arguments Explained
+
+- `--privileged`: Required for the service to create users and perform Docker in Docker operations
+- `--network=host`: Uses the host network stack so the mcp-runner can appropriately forward requests to the ip addresses of the containers
+- `--restart=always`: Automatically restarts the container if it stops or on system reboot
+- `-v /var/run/docker.sock:/var/run/docker.sock`: Mounts the Docker socket to allow container management
+- `-v /etc:/etc`: Mounts system configuration for user management, [mounting /etc/passwd is insufficient](https://stackoverflow.com/questions/33013444/can-not-add-new-user-in-docker-container-with-mounted-etc-passwd-and-etc-shado)
+- `-v /var/mcp-runner:/var/mcp-runner`: Persistent storage for the application database
 
 ### Environment Variables
 
