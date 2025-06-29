@@ -7,7 +7,7 @@ A secure, isolated platform for running MCP (Model Context Protocol) servers in 
 This project solves key challenges when integrating with MCP servers:
 
 - **Security**: Run untrusted MCP servers in isolated containers that cannot access host resources or communicate with each other
-- **Multi-tenancy**: Multiple clients can safely connect to the same MCP server instance without data leakage
+- **Multi-tenancy**: Multiple clients can safely connect to the same MCP server instance or you can set up multiple isolated instances for different users
 - **Ephemeral deployments**: Complete cleanup of all deployment data (configs, logs, network, users) when deleted
 - **Legacy transport support**: Connect to local MCP servers and expose them via modern HTTP/SSE endpoints
 - **Resource management**: Enforce memory and CPU limits on shared infrastructure
