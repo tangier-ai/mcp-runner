@@ -25,7 +25,7 @@ import { DeploymentController } from "./controllers/deployment.controller";
     ScheduleModule.forRoot(),
     ServeStaticModule.forRoot({
       rootPath: resolve(srcRoot, "../", "public").replace("/dist", ""),
-      exclude: ["/api/{*test}"],
+      exclude: ["/mcp-server/(.*)"],
       serveStaticOptions: {
         fallthrough: false,
       },

@@ -59,8 +59,9 @@ export class StdioDockerClient implements Transport {
           const message = JSON.parse(line) as JSONRPCMessage;
           this.onmessage?.(message);
         } catch (parseError) {
-          console.log(parseError);
-          // Ignore non-JSON lines (might be container logs)
+          this.onerror?.(
+            parseError instanceof Error ? parseError : new Error(parseError),
+          );
         }
       }
 

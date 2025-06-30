@@ -183,14 +183,14 @@ export class StreamableHttpMcpServerService {
     // we do this in case we're behind an NGINX proxy because otherwise buffering prevents streaming from working
     res.setHeader("X-Accel-Buffering", "no");
 
+    const transport = this.transports[sessionId];
+
     res.on("close", () => {
       // mark it as no longer connected but do not delete it because the transport can be reused
       if (transport.sessionId) {
         this.connected_sessions.delete(transport.sessionId);
       }
     });
-
-    const transport = this.transports[sessionId];
 
     this.connected_sessions.add(sessionId);
     const [, handleRequestErr] = await tryCatchPromise(
