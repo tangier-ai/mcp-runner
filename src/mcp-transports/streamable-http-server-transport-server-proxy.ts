@@ -1,4 +1,3 @@
-import { InMemoryEventStore } from "@/utils/in-memory-event-store";
 import {
   StreamableHTTPServerTransport,
   StreamableHTTPServerTransportOptions,
@@ -33,11 +32,6 @@ export class StreamableHttpServerTransportServerProxy extends StreamableHTTPServ
     // Options for the Streamable HTTP Server Transport
     options: StreamableHTTPServerTransportOptions,
   ) {
-    // ensure we have an event store for resumability support
-    if (!options.eventStore) {
-      options.eventStore = new InMemoryEventStore();
-    }
-
     super(options);
 
     // when the server receives a message, it forwards it to the actual Underlying MCP Server
