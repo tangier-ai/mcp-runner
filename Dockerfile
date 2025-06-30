@@ -1,5 +1,8 @@
 FROM node:24-slim
 
+RUN apt-get update
+RUN apt-get install -y ca-certificates
+
 WORKDIR /app
 
 COPY package*.json ./
