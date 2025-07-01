@@ -24,6 +24,8 @@ export class StreamableHttpServerTransportServerProxy extends StreamableHTTPServ
   onCloseHandlers: Array<CloseHandler> = [];
   onMessageHandlers: Array<(message: JSONRPCMessage) => void> = [];
 
+  usesNumericalIds = true;
+
   // set up listeners in the constructor
   constructor(
     // The MCP Client Transport that connects to the Underlying MCP Server
@@ -40,6 +42,11 @@ export class StreamableHttpServerTransportServerProxy extends StreamableHTTPServ
 
       // @ts-ignore
       const originalId = message.id;
+
+      if (typeof originalId === "string") {
+        this.usesNumericalIds = false;
+      }
+
       client.send({
         ...message,
         id: prefix + originalId,
@@ -53,7 +60,12 @@ export class StreamableHttpServerTransportServerProxy extends StreamableHTTPServ
       const prefix = this.sessionId + "::";
 
       if ("id" in message && message.id.toString().startsWith(prefix)) {
-        const originalId = message.id.toString().slice(prefix.length);
+        let originalId = message.id.toString().slice(prefix.length);
+
+        if (this.usesNumericalIds) {
+          originalId = Number(originalId);
+        }
+
         await this.send({
           ...message,
           id: originalId,
