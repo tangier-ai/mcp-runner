@@ -41,7 +41,7 @@ export class SseServerTransportProxy extends SSEServerTransport {
     super(endpoint, response);
 
     // when the server receives a message, it forwards it to the actual Underlying MCP Server
-    this.onmessage = (message) => {
+    this.onmessage = async (message) => {
       // @ts-ignore id field exists, we know this
       const originalId = message.id;
       const proxyId = this.proxyIdPrefix + originalId;
@@ -49,7 +49,7 @@ export class SseServerTransportProxy extends SSEServerTransport {
       // Store the original ID mapping, this helps prevent number / string confusion
       this.originalIdMap[proxyId] = originalId;
 
-      client.send({
+      await client.send({
         ...message,
         id: proxyId,
       });
@@ -110,6 +110,7 @@ export class SseServerTransportProxy extends SSEServerTransport {
   async start(): Promise<void> {
     // start the underlying MCP Client Transport when the SSE Server Transport starts
     await this.client.start();
+    await super.start();
   }
 
   async close(): Promise<void> {
@@ -122,21 +123,12 @@ export class SseServerTransportProxy extends SSEServerTransport {
     res: Response,
     message: JSONRPCMessage,
   ): Promise<void> {
-    // @ts-ignore
-    const originalId = message.id;
+    try {
+      this.onmessage?.(message);
+    } catch (e) {
+      Sentry.captureException(e);
+    }
 
-    const proxiedId = this.proxyIdPrefix + originalId;
-
-    // Store the original ID mapping, this helps prevent number / string confusion
-    this.originalIdMap[proxiedId] = originalId;
-
-    // Forward the message to the underlying MCP server with session ID prefix
-    this.client.send({
-      ...message,
-      id: proxiedId,
-    });
-
-    // Send acknowledgment response
-    res.status(200).json({ status: "ok" });
+    res.writeHead(202).end("Accepted");
   }
 }

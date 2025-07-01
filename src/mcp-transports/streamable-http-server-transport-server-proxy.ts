@@ -107,6 +107,7 @@ export class StreamableHttpServerTransportServerProxy extends StreamableHTTPServ
   async start(): Promise<void> {
     // start the underlying MCP Client Transport when the Streamable HTTP Server Transport starts
     await this.client.start();
+    await super.start();
   }
 
   async close(): Promise<void> {

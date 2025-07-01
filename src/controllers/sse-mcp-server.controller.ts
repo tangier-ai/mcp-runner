@@ -12,7 +12,8 @@ export class SSEMcpServerController {
   @ApiOperation({
     operationId: "mcpServerSSE",
     summary: "Establish MCP SSE connection",
-    description: "Server-Sent Events transport endpoint for establishing real-time, bidirectional communication with the MCP server. Enables streaming of server-to-client events and supports connection resumption via Last-Event-ID header.",
+    description:
+      "Server-Sent Events transport endpoint for establishing real-time, bidirectional communication with the MCP server. Enables streaming of server-to-client events and supports connection resumption via Last-Event-ID header.",
   })
   @ApiParam({
     name: "deployment_id",
@@ -41,7 +42,8 @@ export class SSEMcpServerController {
   @ApiOperation({
     operationId: "mcpServerMessages",
     summary: "Send MCP JSON-RPC messages via SSE",
-    description: "SSE transport endpoint for sending client-to-server JSON-RPC messages while maintaining the SSE connection for server responses and real-time event streaming.",
+    description:
+      "SSE transport endpoint for sending client-to-server JSON-RPC messages while maintaining the SSE connection for server responses and real-time event streaming.",
   })
   @ApiParam({
     name: "deployment_id",
