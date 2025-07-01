@@ -60,7 +60,9 @@ export class StreamableHttpServerTransportServerProxy extends StreamableHTTPServ
       const prefix = this.sessionId + "::";
 
       if ("id" in message && message.id.toString().startsWith(prefix)) {
-        let originalId = message.id.toString().slice(prefix.length);
+        let originalId: number | string = message.id
+          .toString()
+          .slice(prefix.length);
 
         if (this.usesNumericalIds) {
           originalId = Number(originalId);
