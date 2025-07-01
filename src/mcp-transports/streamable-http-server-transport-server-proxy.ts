@@ -4,6 +4,7 @@ import {
 } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
+import * as Sentry from "@sentry/node";
 
 /*
  * Terminology:
@@ -24,7 +25,11 @@ export class StreamableHttpServerTransportServerProxy extends StreamableHTTPServ
   onCloseHandlers: Array<CloseHandler> = [];
   onMessageHandlers: Array<(message: JSONRPCMessage) => void> = [];
 
-  usesNumericalIds = true;
+  private originalIdMap: Record<string, string | number> = {};
+
+  get proxyIdPrefix(): string {
+    return this.sessionId + "::";
+  }
 
   // set up listeners in the constructor
   constructor(
@@ -38,18 +43,15 @@ export class StreamableHttpServerTransportServerProxy extends StreamableHTTPServ
 
     // when the server receives a message, it forwards it to the actual Underlying MCP Server
     this.onmessage = (message) => {
-      const prefix = this.sessionId + "::";
-
       // @ts-ignore
       const originalId = message.id;
 
-      if (typeof originalId === "string") {
-        this.usesNumericalIds = false;
-      }
+      const proxyId = this.proxyIdPrefix + originalId;
+      this.originalIdMap[proxyId] = originalId;
 
       client.send({
         ...message,
-        id: prefix + originalId,
+        id: proxyId,
       });
 
       this.onMessageHandlers.forEach((handler) => handler(message));
@@ -57,21 +59,14 @@ export class StreamableHttpServerTransportServerProxy extends StreamableHTTPServ
 
     // when the Underlying MCP Server sends a message, forward it out to the External Client
     client.onmessage = async (message) => {
-      const prefix = this.sessionId + "::";
+      if ("id" in message && message.id in this.originalIdMap) {
+        const originalId = this.originalIdMap[message.id];
 
-      if ("id" in message && message.id.toString().startsWith(prefix)) {
-        let originalId: number | string = message.id
-          .toString()
-          .slice(prefix.length);
-
-        if (this.usesNumericalIds) {
-          originalId = Number(originalId);
-        }
-
-        await this.send({
+        this.send({
           ...message,
+          // send back with original id
           id: originalId,
-        });
+        }).catch(Sentry.captureException);
       }
     };
 
