@@ -36,12 +36,30 @@ export class StreamableHttpServerTransportServerProxy extends StreamableHTTPServ
 
     // when the server receives a message, it forwards it to the actual Underlying MCP Server
     this.onmessage = (message) => {
-      client.send(message);
+      const prefix = this.sessionId + "::";
+
+      // @ts-ignore
+      const originalId = message.id;
+      client.send({
+        ...message,
+        id: prefix + originalId,
+      });
+
       this.onMessageHandlers.forEach((handler) => handler(message));
     };
 
     // when the Underlying MCP Server sends a message, forward it out to the External Client
-    client.onmessage = (message) => this.send(message);
+    client.onmessage = async (message) => {
+      const prefix = this.sessionId + "::";
+
+      if ("id" in message && message.id.toString().startsWith(prefix)) {
+        const originalId = message.id.toString().slice(prefix.length);
+        await this.send({
+          ...message,
+          id: originalId,
+        });
+      }
+    };
 
     // once the server is closed, it will also close the MCP Client Transport
     this.onclose = () => {
