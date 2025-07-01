@@ -1,6 +1,7 @@
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { JSONRPCMessage } from "@modelcontextprotocol/sdk/types";
+import * as Sentry from "@sentry/node";
 import { Request, Response } from "express";
 
 /*
@@ -22,6 +23,12 @@ export class SseServerTransportProxy extends SSEServerTransport {
   onCloseHandlers: Array<CloseHandler> = [];
   onMessageHandlers: Array<(message: JSONRPCMessage) => void> = [];
 
+  private originalIdMap: Record<string, string | number> = {};
+
+  get proxyIdPrefix(): string {
+    return this.sessionId + "::";
+  }
+
   // set up listeners in the constructor
   constructor(
     // The MCP Client Transport that connects to the Underlying MCP Server
@@ -34,14 +41,36 @@ export class SseServerTransportProxy extends SSEServerTransport {
     super(endpoint, response);
 
     // when the server receives a message, it forwards it to the actual Underlying MCP Server
-    this.onmessage = (message) => {
-      client.send(message);
+    this.onmessage = async (message) => {
+      // @ts-ignore id field exists, we know this
+      const originalId = message.id;
+      const proxyId = this.proxyIdPrefix + originalId;
+
+      // Store the original ID mapping, this helps prevent number / string confusion
+      this.originalIdMap[proxyId] = originalId;
+
+      await client.send({
+        ...message,
+        id: proxyId,
+      });
 
       this.onMessageHandlers.forEach((handler) => handler(message));
     };
 
     // when the Underlying MCP Server sends a message, forward it out to the External Client
-    client.onmessage = (message) => this.send(message);
+    client.onmessage = async (message) => {
+      if ("id" in message && message.id in this.originalIdMap) {
+        // Extract the original ID from the prefixed ID
+        const originalId: string | number = this.originalIdMap[message.id];
+
+        this.send({
+          ...message,
+
+          // send back with original id
+          id: originalId,
+        }).catch(Sentry.captureException);
+      }
+    };
 
     // once the server is closed, it will also close the MCP Client Transport
     this.onclose = () => {
@@ -81,6 +110,7 @@ export class SseServerTransportProxy extends SSEServerTransport {
   async start(): Promise<void> {
     // start the underlying MCP Client Transport when the SSE Server Transport starts
     await this.client.start();
+    await super.start();
   }
 
   async close(): Promise<void> {
@@ -91,12 +121,14 @@ export class SseServerTransportProxy extends SSEServerTransport {
   async handlePostMessage(
     req: Request,
     res: Response,
-    message: any,
+    message: JSONRPCMessage,
   ): Promise<void> {
-    // Forward the message to the underlying MCP server
-    this.client.send(message);
+    try {
+      this.onmessage?.(message);
+    } catch (e) {
+      Sentry.captureException(e);
+    }
 
-    // Send acknowledgment response
-    res.status(200).json({ status: "ok" });
+    res.writeHead(202).end("Accepted");
   }
 }

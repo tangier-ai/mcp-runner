@@ -4,6 +4,7 @@ import {
 } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
+import * as Sentry from "@sentry/node";
 
 /*
  * Terminology:
@@ -24,6 +25,12 @@ export class StreamableHttpServerTransportServerProxy extends StreamableHTTPServ
   onCloseHandlers: Array<CloseHandler> = [];
   onMessageHandlers: Array<(message: JSONRPCMessage) => void> = [];
 
+  private originalIdMap: Record<string, string | number> = {};
+
+  get proxyIdPrefix(): string {
+    return this.sessionId + "::";
+  }
+
   // set up listeners in the constructor
   constructor(
     // The MCP Client Transport that connects to the Underlying MCP Server
@@ -36,12 +43,32 @@ export class StreamableHttpServerTransportServerProxy extends StreamableHTTPServ
 
     // when the server receives a message, it forwards it to the actual Underlying MCP Server
     this.onmessage = (message) => {
-      client.send(message);
+      // @ts-ignore
+      const originalId = message.id;
+
+      const proxyId = this.proxyIdPrefix + originalId;
+      this.originalIdMap[proxyId] = originalId;
+
+      client.send({
+        ...message,
+        id: proxyId,
+      });
+
       this.onMessageHandlers.forEach((handler) => handler(message));
     };
 
     // when the Underlying MCP Server sends a message, forward it out to the External Client
-    client.onmessage = (message) => this.send(message);
+    client.onmessage = async (message) => {
+      if ("id" in message && message.id in this.originalIdMap) {
+        const originalId = this.originalIdMap[message.id];
+
+        this.send({
+          ...message,
+          // send back with original id
+          id: originalId,
+        }).catch(Sentry.captureException);
+      }
+    };
 
     // once the server is closed, it will also close the MCP Client Transport
     this.onclose = () => {
@@ -80,6 +107,7 @@ export class StreamableHttpServerTransportServerProxy extends StreamableHTTPServ
   async start(): Promise<void> {
     // start the underlying MCP Client Transport when the Streamable HTTP Server Transport starts
     await this.client.start();
+    await super.start();
   }
 
   async close(): Promise<void> {
