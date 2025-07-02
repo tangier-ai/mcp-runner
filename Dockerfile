@@ -1,4 +1,4 @@
-FROM node:24-slim
+FROM node:24.3-slim
 
 RUN apt-get update
 RUN apt-get install -y ca-certificates
