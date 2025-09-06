@@ -47,7 +47,7 @@
     "@nestjs/schedule": "^6.0.0",
     "@nestjs/serve-static": "^5.0.3",
     "@nestjs/swagger": "^11.2.0",
-    "@sentry/cli": "^2.46.0",
+    "@sentry/cli": "^2.52.0",
     "@sentry/nestjs": "^9.35.0",
     "@types/dockerode": "^3.3.41",
     "better-sqlite3": "^12.2.0",
