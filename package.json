@@ -40,7 +40,7 @@
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org $SENTRY_ORG --project $SENTRY_PROJECT ./dist && sentry-cli sourcemaps upload --org $SENTRY_ORG --project $SENTRY_PROJECT ./dist"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.15.0",
+    "@modelcontextprotocol/sdk": "^1.17.3",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
@@ -48,7 +48,7 @@
     "@nestjs/serve-static": "^5.0.3",
     "@nestjs/swagger": "^11.2.0",
     "@sentry/cli": "^2.52.0",
-    "@sentry/nestjs": "^9.35.0",
+    "@sentry/nestjs": "^9.46.0",
     "@types/dockerode": "^3.3.41",
     "better-sqlite3": "^12.2.0",
     "class-transformer": "^0.5.1",
@@ -69,7 +69,7 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
-    "@types/node": "^22.10.7",
+    "@types/node": "^22.17.2",
     "@types/supertest": "^6.0.2",
     "drizzle-kit": "^0.31.3",
     "eslint": "^9.18.0",
@@ -87,7 +87,7 @@
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.20.3",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.20.0"
+    "typescript-eslint": "^8.40.0"
   },
   "overrides": {
     "esbuild": "0.25.5"
