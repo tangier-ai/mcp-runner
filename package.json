@@ -54,7 +54,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "dockerode": "^4.0.7",
-    "drizzle-orm": "^0.44.2",
+    "drizzle-orm": "^0.44.5",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },
