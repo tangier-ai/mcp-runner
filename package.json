@@ -69,7 +69,7 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
-    "@types/node": "^22.18.3",
+    "@types/node": "^22.19.1",
     "@types/supertest": "^6.0.2",
     "drizzle-kit": "^0.31.3",
     "eslint": "^9.34.0",
